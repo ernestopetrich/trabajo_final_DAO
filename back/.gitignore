@@ -1,0 +1,22 @@
+# --- Entornos Virtuales ---
+# Ignora la carpeta del entorno virtual, que contiene paquetes instalados
+venv/
+.venv/
+env/
+
+# --- Python Cache ---
+# Ignora los archivos de bytecode compilado que Python genera
+__pycache__/
+*.pyc
+
+# --- Bases de Datos ---
+# Ignora tu base de datos local de SQLite. ¡Importante!
+*.db
+*.sqlite
+*.sqlite3
+
+# --- Archivos de Configuración de IDE ---
+# Ignora carpetas de configuración de editores de código
+.vscode/
+.idea/
+
