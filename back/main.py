@@ -204,6 +204,13 @@ def api_create_reserva(reserva: ReservaCreate):
     Verifica la disponibilidad del vehículo antes de confirmar.
     """
     # Validar que existen los objetos
+
+    f_i = datetime.strptime(reserva.fecha_inicio, "%d/%m/%Y")
+    f_f = datetime.strptime(reserva.fecha_fin, "%d/%m/%Y")
+    print(f_i, f_f)
+    if f_i >= f_f:
+        raise HTTPException(status_code=400, detail="La fecha de inicio debe ser anterior a la fecha de fin")
+
     cliente = ClienteModel.get_by_id(reserva.id_cliente)
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
@@ -276,9 +283,8 @@ def api_create_alquiler(alquiler: AlquilerCreate):
 
     return nuevo_alquiler
 
-@app.post("/alquileres/reserva/", response_model=Alquiler, tags=["Operaciones"])
+@app.post("/alquileres/reserva", response_model=Alquiler, tags=["Operaciones"])
 def api_create_alquiler_from_reserva(rsrv: ReservaAPI):
-    print(rsrv)
     """
     Convierte una reserva en un alquiler.
     Verifica disponibilidad y actualiza el estado del vehículo a 'alquilado'.
@@ -306,15 +312,15 @@ def api_create_alquiler_from_reserva(rsrv: ReservaAPI):
     if not empleado:
         raise HTTPException(status_code=404, detail="Empleado no encontrado")
 
-    # Verificar disponibilidad
+    """# Verificar disponibilidad
     if not vehiculo.is_available(reserva.fecha_inicio, reserva.fecha_fin):
-        raise HTTPException(status_code=400, detail="Vehículo no disponible en este momento")
+        raise HTTPException(status_code=400, detail="Vehículo no disponible en este momento")"""
 
     # Crear el alquiler
     nuevo_alquiler = AlquilerModel.create(
         id_cliente=reserva.id_cliente,
         id_vehiculo=reserva.id_vehiculo,
-        id_empleado=id_empleado,
+        id_empleado=rsrv.id_empleado,
         fecha_hora_inicio=reserva.fecha_inicio,
         fecha_hora_fin_prevista=reserva.fecha_fin
     )
@@ -326,6 +332,24 @@ def api_create_alquiler_from_reserva(rsrv: ReservaAPI):
     reserva.update_estado('convertida')
 
     return nuevo_alquiler
+
+@app.post("/alquileres/{alquiler_id}/devolver", response_model=Alquiler, tags=["Operaciones"])
+def api_devolver_alquiler(alquiler_id: int):
+    """
+    Marca un alquiler como devuelto.
+    Actualiza la fecha/hora de fin real y calcula el costo total.
+    """
+    alquiler = AlquilerModel.get_by_id(alquiler_id)
+    if not alquiler:
+        raise HTTPException(status_code=404, detail="Alquiler no encontrado")
+    
+    if alquiler.estado != 'activo':
+        raise HTTPException(status_code=400, detail="El alquiler ya fue devuelto o cancelado")
+
+    # Devolver el vehículo
+    alquiler.devolver()
+
+    return alquiler
 
 
 if __name__ == "__main__":

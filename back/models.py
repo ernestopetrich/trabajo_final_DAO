@@ -226,7 +226,7 @@ class Vehiculo:
             (self.id_vehiculo, fecha_fin, fecha_inicio, fecha_inicio, fecha_fin, fecha_inicio, fecha_fin)
         )
         alquileres_count = cursor.fetchone()[0]
-        
+        print("cantidad de alquileres del vehiculo",alquileres_count)
         if alquileres_count > 0:
             conn.close()
             return False # Ocupado por un alquiler
@@ -246,7 +246,7 @@ class Vehiculo:
             (self.id_vehiculo, fecha_fin, fecha_inicio, fecha_inicio, fecha_fin, fecha_inicio, fecha_fin)
         )
         reservas_count = cursor.fetchone()[0]
-        
+        print("cantidad de reservas del vehiculo", reservas_count)
         conn.close()
         return reservas_count == 0 # True si no hay alquileres NI reservas
 
@@ -366,6 +366,19 @@ class Alquiler:
         if row:
             return Alquiler(*row)
         return None
+    
+    @staticmethod
+    def devolver():
+        """Marca el alquiler como finalizado y actualiza el vehículo a 'disponible'."""
+        
+        if self.estado != 'activo':
+            print(f"Alquiler #{self.id_alquiler} no está activo. No se puede devolver.")
+            return False
+        
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        try:
+
 
 # Puedes seguir añadiendo las clases para Empleado, Mantenimiento, Multa, Danio, etc.
 # siguiendo el mismo patrón.
