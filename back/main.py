@@ -72,9 +72,9 @@ class ReservaBase(BaseModel):
 class ReservaCreate(ReservaBase):
     pass
 
-class ReservaAPI(ReservaBase):
+class ReservaAPI(BaseModel):
     id_reserva: int
-    id_empleado: int | None = None
+    id_empleado: int
 
 class Reserva(ReservaBase):
     id_reserva: int
@@ -97,6 +97,8 @@ class Alquiler(AlquilerBase):
     costo_total: float | None = None
     estado: str
     model_config = ConfigDict(from_attributes=True)
+
+
 
 
 # --- Configuración de la Aplicación ---
@@ -133,6 +135,10 @@ def setup_database():
 
 # --- Endpoints de la API ---
 
+# Endpoint bienvenida
+@app.get("/", response_model=str, tags=["Operaciones"])
+def api_landing():
+    return "Bienvenido a la API AlquilaYa"
 
 # Clients Endpoints
 @app.post("/clientes/", response_model=Cliente, tags=["Clientes"])
@@ -222,6 +228,8 @@ def api_create_reserva(reserva: ReservaCreate):
         raise HTTPException(status_code=500, detail="Error al guardar la reserva")
     
     return nueva_reserva
+
+
 
 @app.get("/reservas/", response_model=List[Reserva], tags=["Operaciones"])
 def api_list_reservas():
