@@ -60,6 +60,16 @@ class Cliente:
         if row:
             return Cliente(*row)
         return None
+    
+    @staticmethod
+    def get_all():
+        """Obtiene todos los clientes."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Clientes")
+        rows = cursor.fetchall()
+        conn.close()
+        return [Cliente(*row) for row in rows]
 
 class Empleado:
     def __init__(self, id_empleado, tipo_dni, dni, nombre, apellido):
@@ -89,6 +99,16 @@ class Empleado:
             return None
         finally:
             conn.close()
+        
+    @staticmethod
+    def get_all():
+        """Obtiene todos los empleados."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Empleados")
+        rows = cursor.fetchall()
+        conn.close()
+        return [Empleado(*row) for row in rows]
 
     @staticmethod
     def get_by_id(id_empleado):
@@ -144,6 +164,16 @@ class Vehiculo:
             return None
         finally:
             conn.close()
+
+    @staticmethod
+    def get_all():
+        """Obtiene todos los vehículos."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Vehiculos")
+        rows = cursor.fetchall()
+        conn.close()
+        return [Vehiculo(*row) for row in rows]
 
     @staticmethod
     def get_by_id(id_vehiculo):
@@ -262,6 +292,16 @@ class Reserva:
         if row:
             return Reserva(*row)
         return None
+    
+    @staticmethod
+    def get_all():
+        """Obtiene todas las reservas."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Reservas")
+        rows = cursor.fetchall()
+        conn.close()
+        return [Reserva(*row) for row in rows]
 
     def update_estado(self, nuevo_estado):
         """Actualiza el estado de la reserva (ej. 'confirmada', 'cancelada')."""
@@ -329,3 +369,258 @@ class Alquiler:
 
 # Puedes seguir añadiendo las clases para Empleado, Mantenimiento, Multa, Danio, etc.
 # siguiendo el mismo patrón.
+
+
+class Mantenimiento:
+    def __init__(self, id_mantenimiento, id_vehiculo, fecha_hora_inicio, fecha_hora_fin, descripcion, costo):
+        self.id_mantenimiento = id_mantenimiento
+        self.id_vehiculo = id_vehiculo
+        self.fecha_hora_inicio = fecha_hora_inicio
+        self.fecha_hora_fin = fecha_hora_fin
+        self.descripcion = descripcion
+        self.costo = costo
+
+    def __repr__(self):
+        return f"<Mantenimiento #{self.id_mantenimiento} (Veh: {self.id_vehiculo}) - {self.estado}>"
+    
+    @staticmethod
+    def create(id_vehiculo, fecha_hora_inicio, fecha_hora_fin, descripcion, costo):
+        """Crea un nuevo registro de mantenimiento."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "INSERT INTO Mantenimientos (id_vehiculo, fecha_hora_inicio, fecha_hora_fin, descripcion, costo) VALUES (?, ?, ?, ?, ?)",
+                (id_vehiculo, fecha_hora_inicio, fecha_hora_fin, descripcion, costo)
+            )
+            conn.commit()
+            return Mantenimiento.get_by_id(cursor.lastrowid)
+        except sqlite3.Error as e:
+            print(f"Error al crear mantenimiento: {e}")
+            return None
+        finally:
+            conn.close()
+        
+    @staticmethod
+    def get_by_id(id_mantenimiento):
+        """Obtiene un mantenimiento por su ID."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Mantenimientos WHERE id_mantenimiento = ?", (id_mantenimiento,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return Mantenimiento(*row)
+        return None
+    
+    @staticmethod
+    def get_all():
+        """Obtiene todos los mantenimientos."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Mantenimientos")
+        rows = cursor.fetchall()
+        conn.close()
+        return [Mantenimiento(*row) for row in rows]
+    
+
+
+class Multa:
+    def __init__(self, id_multa, id_alquiler, descripcion, monto, fecha_hora_multa, estado):
+        self.id_multa = id_multa
+        self.id_alquiler = id_alquiler
+        self.descripcion = descripcion
+        self.monto = monto
+        self.fecha_hora_multa = fecha_hora_multa
+        self.estado = estado
+    
+    def __repr__(self):
+        return f"<Multa #{self.id_multa} (Alquiler: {self.id_alquiler}) - {self.estado}>"
+    
+    @staticmethod
+    def create(id_alquiler, descripcion, monto, fecha_hora_multa, estado='pendiente'):
+        """Crea una nueva multa."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "INSERT INTO Multas (id_alquiler, descripcion, monto, fecha_hora_multa, estado) VALUES (?, ?, ?, ?, ?)",
+                (id_alquiler, descripcion, monto, fecha_hora_multa, estado)
+            )
+            conn.commit()
+            return Multa.get_by_id(cursor.lastrowid)
+        except sqlite3.Error as e:
+            print(f"Error al crear multa: {e}")
+            return None
+        finally:
+            conn.close()
+    
+    @staticmethod
+    def get_by_id_alquiler(id_alquiler):
+        """Obtiene una multa por su ID de alquiler."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Multas WHERE id_alquiler = ?", (id_alquiler,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return Multa(*row)
+        return None
+    
+    @staticmethod
+    def get_all():
+        """Obtiene todas las multas."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Multas")
+        rows = cursor.fetchall()
+        conn.close()
+        return [Multa(*row) for row in rows]
+    
+
+
+class Danio:
+    def __init__(self, id_danio, id_alquiler, descripcion, costo_reparacion, fecha_hora_reporte, estado):
+        self.id_danio = id_danio
+        self.id_alquiler = id_alquiler
+        self.descripcion = descripcion
+        self.costo_reparacion = costo_reparacion
+        self.fecha_hora_reporte = fecha_hora_reporte
+        self.estado = estado
+
+    def __repr__(self):
+        return f"<Danio #{self.id_danio} (Alquiler: {self.id_alquiler}) - {self.estado}>"
+    
+    @staticmethod
+    def create(id_alquiler, descripcion, costo_reparacion, fecha_hora_reporte, estado='pendiente'):
+        """Crea un nuevo daño."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "INSERT INTO Danios (id_alquiler, descripcion, costo_reparacion, fecha_hora_reporte, estado) VALUES (?, ?, ?, ?, ?)",
+                (id_alquiler, descripcion, costo_reparacion, fecha_hora_reporte, estado)
+            )
+            conn.commit()
+            return Danio.get_by_id(cursor.lastrowid)
+        except sqlite3.Error as e:
+            print(f"Error al crear daño: {e}")
+            return None
+        finally:
+            conn.close()
+        
+    @staticmethod
+    def get_by_id_alquiler(id_alquiler):
+        """Obtiene un daño por su ID de alquiler."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Danios WHERE id_alquiler = ?", (id_alquiler,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return Danio(*row)
+        return None
+    
+    @staticmethod
+    def get_all():
+        """Obtiene todos los daños."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Danios")
+        rows = cursor.fetchall()
+        conn.close()
+        return [Danio(*row) for row in rows]
+    
+
+class Factura:
+    def __init__(self, id_factura, id_alquiler, fecha_hora_emision, monto_total, estado_pago):
+        self.id_factura = id_factura
+        self.id_alquiler = id_alquiler
+        self.fecha_hora_emision = fecha_hora_emision
+        self.monto_total = monto_total
+        self.estado_pago = estado_pago
+
+    def __repr__(self):
+        return f"<Factura #{self.id_factura} (Alquiler: {self.id_alquiler}) - {self.estado_pago}>"
+    
+    @staticmethod
+    def create(id_alquiler, fecha_hora_emision, monto_total, estado_pago='pendiente'):
+        """Crea una nueva factura."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "INSERT INTO Facturas (id_alquiler, fecha_hora_emision, monto_total, estado_pago) VALUES (?, ?, ?, ?)",
+                (id_alquiler, fecha_hora_emision, monto_total, estado_pago)
+            )
+            conn.commit()
+            return Factura.get_by_id(cursor.lastrowid)
+        except sqlite3.Error as e:
+            print(f"Error al crear factura: {e}")
+            return None
+        finally:
+            conn.close()
+
+    @staticmethod
+    def get_by_id(id_factura):
+        """Obtiene una factura por su ID."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Facturas WHERE id_factura = ?", (id_factura,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return Factura(*row)
+        return None
+
+    @staticmethod
+    def get_all():
+        """Obtiene todas las facturas."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Facturas")
+        rows = cursor.fetchall()
+        conn.close()
+        return [Factura(*row) for row in rows]
+    
+
+class DetalleFactura:
+    def __init__(self, id_detalle, id_factura, descripcion, cantidad, precio_unitario):
+        self.id_detalle = id_detalle
+        self.id_factura = id_factura
+        self.descripcion = descripcion
+        self.cantidad = cantidad
+        self.precio_unitario = precio_unitario
+
+    def __repr__(self):
+        return f"<DetalleFactura #{self.id_detalle} (Factura: {self.id_factura}) - {self.descripcion}>"
+    
+    @staticmethod
+    def create(id_factura, descripcion, cantidad, precio_unitario):
+        """Crea un nuevo detalle de factura."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "INSERT INTO Detalle_Factura (id_factura, descripcion, cantidad, precio_unitario) VALUES (?, ?, ?, ?)",
+                (id_factura, descripcion, cantidad, precio_unitario)
+            )
+            conn.commit()
+            return DetalleFactura.get_by_id(cursor.lastrowid)
+        except sqlite3.Error as e:
+            print(f"Error al crear detalle de factura: {e}")
+            return None
+        finally:
+            conn.close()
+    
+    @staticmethod
+    def get_by_id(id_detalle):
+        """Obtiene un detalle de factura por su ID."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Detalle_Factura WHERE id_detalle = ?", (id_detalle,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return DetalleFactura(*row)
+        return None

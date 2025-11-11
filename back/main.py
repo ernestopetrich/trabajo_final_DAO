@@ -3,7 +3,6 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, ConfigDict
 from typing import List
 import database
-# --- CORRECCIÓN ---
 # Importamos los modelos de la lógica de BD con un alias "Model"
 # para evitar colisiones de nombres con los modelos Pydantic.
 from models import (
@@ -11,7 +10,8 @@ from models import (
     Cliente as ClienteModel, 
     Reserva as ReservaModel, 
     Alquiler as AlquilerModel, 
-    Empleado as EmpleadoModel
+    Empleado as EmpleadoModel,
+    Mantenimiento as MantenimientoModel
 )
 import os
 from datetime import datetime, timedelta
@@ -72,6 +72,10 @@ class ReservaBase(BaseModel):
 class ReservaCreate(ReservaBase):
     pass
 
+class ReservaAPI(ReservaBase):
+    id_reserva: int
+    id_empleado: int | None = None
+
 class Reserva(ReservaBase):
     id_reserva: int
     estado: str
@@ -111,7 +115,6 @@ def setup_database():
     if is_new_db:
         print("Base de datos nueva. Creando datos de ejemplo...")
         
-        # --- CORRECCIÓN ---
         # Usamos los alias ...Model para llamar a los métodos de clase
         
         # Crear clientes de ejemplo
@@ -130,16 +133,16 @@ def setup_database():
 
 # --- Endpoints de la API ---
 
+
+# Clients Endpoints
 @app.post("/clientes/", response_model=Cliente, tags=["Clientes"])
 def api_create_cliente(cliente: ClienteCreate):
     """Crea un nuevo cliente."""
     
-    # --- CORRECCIÓN ---
     db_cliente = ClienteModel.get_by_dni(cliente.dni)
     if db_cliente:
         raise HTTPException(status_code=400, detail="El DNI ya está registrado")
     
-    # --- CORRECCIÓN ---
     nuevo_cliente = ClienteModel.create(**cliente.model_dump())
     if not nuevo_cliente:
         raise HTTPException(status_code=500, detail="Error al crear el cliente")
@@ -148,18 +151,17 @@ def api_create_cliente(cliente: ClienteCreate):
 @app.get("/clientes/{cliente_id}", response_model=Cliente, tags=["Clientes"])
 def api_get_cliente_by_id(cliente_id: int):
     """Obtiene un cliente por su ID."""
-    
-    # --- CORRECCIÓN ---
     cliente = ClienteModel.get_by_id(cliente_id)
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
     return cliente
 
+
+
+# Vehículos Endpoints
 @app.post("/vehiculos/", response_model=Vehiculo, tags=["Vehículos"])
 def api_create_vehiculo(vehiculo: VehiculoCreate):
     """Crea un nuevo vehículo."""
-    
-    # --- CORRECCIÓN ---
     nuevo_vehiculo = VehiculoModel.create(**vehiculo.model_dump())
     if not nuevo_vehiculo:
         raise HTTPException(status_code=400, detail="Error al crear el vehículo (¿patente duplicada?)")
@@ -167,18 +169,28 @@ def api_create_vehiculo(vehiculo: VehiculoCreate):
 
 @app.get("/vehiculos/{vehiculo_id}", response_model=Vehiculo, tags=["Vehículos"])
 def api_get_vehiculo_by_id(vehiculo_id: int):
-    print("Obteniendo vehículo ID:", vehiculo_id)
     """Obtiene un vehículo por su ID."""
-    
-    # --- CORRECCIÓN ---
     vehiculo = VehiculoModel.get_by_id(vehiculo_id)
-    print("Vehículo encontrado:", vehiculo)
     if not vehiculo:
         raise HTTPException(status_code=404, detail="Vehículo no encontrado")
     return vehiculo
 
-# (Puedes añadir endpoints para Empleados de la misma manera)
+@app.get("/vehiculos/", response_model=List[Vehiculo], tags=["Vehículos"])
+def api_list_vehiculos():
+    """Lista todos los vehículos."""
+    
+    vehiculos = VehiculoModel.get_all()
+    return vehiculos
 
+
+# Empleados Endpoints
+@app.get("/empleados/", response_model=List[Empleado], tags=["Empleados"])
+def api_list_empleados():
+    """Lista todos los empleados."""
+    empleados = EmpleadoModel.get_all()
+    return empleados
+
+# Reservas Endpoints
 @app.post("/reservas/", response_model=Reserva, tags=["Operaciones"])
 def api_create_reserva(reserva: ReservaCreate):
     """
@@ -186,23 +198,19 @@ def api_create_reserva(reserva: ReservaCreate):
     Verifica la disponibilidad del vehículo antes de confirmar.
     """
     # Validar que existen los objetos
-    # --- CORRECCIÓN ---
     cliente = ClienteModel.get_by_id(reserva.id_cliente)
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
     
-    # --- CORRECCIÓN ---
     vehiculo = VehiculoModel.get_by_id(reserva.id_vehiculo)
     if not vehiculo:
         raise HTTPException(status_code=404, detail="Vehículo no encontrado")
 
-    # Lógica de negocio: Verificar disponibilidad (la función clave de tu modelo)
-    # No necesita corrección, 'vehiculo' es una instancia de 'VehiculoModel'
+    # Verificar disponibilidad
     if not vehiculo.is_available(reserva.fecha_inicio, reserva.fecha_fin):
         raise HTTPException(status_code=400, detail="Vehículo no disponible en las fechas solicitadas")
 
     # Crear la reserva
-    # --- CORRECCIÓN ---
     nueva_reserva = ReservaModel.create(
         id_cliente=reserva.id_cliente,
         id_vehiculo=reserva.id_vehiculo,
@@ -215,6 +223,14 @@ def api_create_reserva(reserva: ReservaCreate):
     
     return nueva_reserva
 
+@app.get("/reservas/", response_model=List[Reserva], tags=["Operaciones"])
+def api_list_reservas():
+    """Lista todas las reservas."""
+    reservas = ReservaModel.get_all()
+    return reservas
+
+
+# Alquileres Endpoints
 @app.post("/alquileres/", response_model=Alquiler, tags=["Operaciones"])
 def api_create_alquiler(alquiler: AlquilerCreate):
     """
@@ -222,28 +238,23 @@ def api_create_alquiler(alquiler: AlquilerCreate):
     Verifica disponibilidad y actualiza el estado del vehículo a 'alquilado'.
     """
     # Validar que existen los objetos
-    # --- CORRECCIÓN ---
     cliente = ClienteModel.get_by_id(alquiler.id_cliente)
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
     
-    # --- CORRECCIÓN ---
     vehiculo = VehiculoModel.get_by_id(alquiler.id_vehiculo)
     if not vehiculo:
         raise HTTPException(status_code=404, detail="Vehículo no encontrado")
     
-    # --- CORRECCIÓN ---
     empleado = EmpleadoModel.get_by_id(alquiler.id_empleado)
     if not empleado:
         raise HTTPException(status_code=404, detail="Empleado no encontrado")
 
     # Lógica de negocio: Verificar disponibilidad
-    # No necesita corrección, 'vehiculo' es una instancia de 'VehiculoModel'
     if not vehiculo.is_available(alquiler.fecha_hora_inicio, alquiler.fecha_hora_fin_prevista):
         raise HTTPException(status_code=400, detail="Vehículo no disponible en este momento")
 
     # Crear el alquiler (el modelo se encarga de actualizar el estado del vehiculo)
-    # --- CORRECCIÓN ---
     nuevo_alquiler = AlquilerModel.create(
         id_cliente=alquiler.id_cliente,
         id_vehiculo=alquiler.id_vehiculo,
@@ -257,7 +268,57 @@ def api_create_alquiler(alquiler: AlquilerCreate):
 
     return nuevo_alquiler
 
-# --- Punto de entrada para Uvicorn ---
+@app.post("/alquileres/reserva/", response_model=Alquiler, tags=["Operaciones"])
+def api_create_alquiler_from_reserva(rsrv: ReservaAPI):
+    print(rsrv)
+    """
+    Convierte una reserva en un alquiler.
+    Verifica disponibilidad y actualiza el estado del vehículo a 'alquilado'.
+    """
+
+
+    reserva = ReservaModel.get_by_id(rsrv.id_reserva)
+    if not reserva:
+        raise HTTPException(status_code=404, detail="Reserva no encontrada")
+    
+    if reserva.fecha_inicio < datetime.now().strftime("%d/%m/%Y"):
+        raise HTTPException(status_code=400, detail="La fecha de inicio de la reserva ya pasó")
+    
+    elif reserva.fecha_inicio > (datetime.now() + timedelta(days=2)).strftime("%d/%m/%Y"):
+        raise HTTPException(status_code=400, detail="Solo se pueden convertir reservas con hasta 2 días de anticipación")
+
+    if reserva.estado != 'confirmada':
+        raise HTTPException(status_code=400, detail="Solo se pueden convertir reservas confirmadas")
+
+    vehiculo = VehiculoModel.get_by_id(reserva.id_vehiculo)
+    if not vehiculo:
+        raise HTTPException(status_code=404, detail="Vehículo no encontrado")
+
+    empleado = EmpleadoModel.get_by_id(rsrv.id_empleado)
+    if not empleado:
+        raise HTTPException(status_code=404, detail="Empleado no encontrado")
+
+    # Verificar disponibilidad
+    if not vehiculo.is_available(reserva.fecha_inicio, reserva.fecha_fin):
+        raise HTTPException(status_code=400, detail="Vehículo no disponible en este momento")
+
+    # Crear el alquiler
+    nuevo_alquiler = AlquilerModel.create(
+        id_cliente=reserva.id_cliente,
+        id_vehiculo=reserva.id_vehiculo,
+        id_empleado=id_empleado,
+        fecha_hora_inicio=reserva.fecha_inicio,
+        fecha_hora_fin_prevista=reserva.fecha_fin
+    )
+    
+    if not nuevo_alquiler:
+        raise HTTPException(status_code=500, detail="Error al crear el alquiler desde la reserva")
+
+    # Actualizar estado de la reserva
+    reserva.update_estado('convertida')
+
+    return nuevo_alquiler
+
 
 if __name__ == "__main__":
     setup_database() # Prepara la BD y datos de ejemplo
