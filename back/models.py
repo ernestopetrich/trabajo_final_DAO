@@ -1,5 +1,9 @@
+from math import ceil
 import database
 import sqlite3 # Importar sqlite3 para manejar IntegrityError
+from datetime import datetime
+from utils import to_iso
+
 
 # Usamos un patrón simple donde las clases tienen métodos estáticos
 # para interactuar con la BD. Una instancia de la clase representa
@@ -70,6 +74,50 @@ class Cliente:
         rows = cursor.fetchall()
         conn.close()
         return [Cliente(*row) for row in rows]
+    
+    @staticmethod
+    def update(id_cliente, tipo_dni=None, dni=None, nombre=None, apellido=None, telefono=None, email=None, direccion=None):
+        fields = []
+        params = []
+        mapping = {
+            "tipo_dni": tipo_dni, "dni": dni, "nombre": nombre, "apellido": apellido,
+            "telefono": telefono, "email": email, "direccion": direccion
+        }
+        for k, v in mapping.items():
+            if v is not None:
+                fields.append(f"{k} = ?")
+                params.append(v)
+        if not fields:
+            return Cliente.get_by_id(id_cliente)  # nada para actualizar
+
+        params.append(id_cliente)
+        conn = database.get_db_connection()
+        cur = conn.cursor()
+        try:
+            cur.execute(f"UPDATE Clientes SET {', '.join(fields)} WHERE id_cliente = ?", params)
+            conn.commit()
+            return Cliente.get_by_id(id_cliente)
+        except Exception as e:
+            print("Error updating cliente:", e)
+            conn.rollback()
+            return None
+        finally:
+            conn.close()
+
+    @staticmethod
+    def delete(id_cliente):
+        conn = database.get_db_connection()
+        cur = conn.cursor()
+        try:
+            cur.execute("DELETE FROM Clientes WHERE id_cliente = ?", (id_cliente,))
+            conn.commit()
+            return cur.rowcount > 0
+        except Exception as e:
+            print("Error deleting cliente:", e)
+            conn.rollback()
+            return False
+        finally:
+            conn.close()
 
 class Empleado:
     def __init__(self, id_empleado, tipo_dni, dni, nombre, apellido):
@@ -186,6 +234,56 @@ class Vehiculo:
         if row:
             return Vehiculo(*row)
         return None
+    
+    @staticmethod
+    def update(id_vehiculo, patente=None, marca=None, modelo=None, nombre=None, precio_diario=None, estado=None):
+        fields = []
+        params = []
+        mapping = {
+            "patente": patente, "marca": marca, "modelo": modelo, "nombre": nombre,
+            "precio_diario": precio_diario, "estado": estado
+        }
+        for k, v in mapping.items():
+            if v is not None:
+                fields.append(f"{k} = ?")
+                params.append(v)
+        if not fields:
+            return Vehiculo.get_by_id(id_vehiculo)
+
+        params.append(id_vehiculo)
+        conn = database.get_db_connection()
+        cur = conn.cursor()
+        try:
+            cur.execute(f"UPDATE Vehiculos SET {', '.join(fields)} WHERE id_vehiculo = ?", params)
+            conn.commit()
+            return Vehiculo.get_by_id(id_vehiculo)
+        except Exception as e:
+            print("Error updating vehiculo:", e)
+            conn.rollback()
+            return None
+        finally:
+            conn.close()
+
+    @staticmethod
+    def delete(id_vehiculo):
+        conn = database.get_db_connection()
+        cur = conn.cursor()
+        try:
+            # opcional: impedir borrado si está alquilado
+            cur.execute("SELECT estado FROM Vehiculos WHERE id_vehiculo = ?", (id_vehiculo,))
+            r = cur.fetchone()
+            if r and r[0] == 'alquilado':
+                print("No se puede borrar un vehículo alquilado.")
+                return False
+            cur.execute("DELETE FROM Vehiculos WHERE id_vehiculo = ?", (id_vehiculo,))
+            conn.commit()
+            return cur.rowcount > 0
+        except Exception as e:
+            print("Error deleting vehiculo:", e)
+            conn.rollback()
+            return False
+        finally:
+            conn.close()
 
     def update_estado(self, nuevo_estado):
         """Actualiza el estado del vehículo (ej. 'disponible', 'alquilado')."""
@@ -320,9 +418,9 @@ class Alquiler:
         self.id_cliente = id_cliente
         self.id_vehiculo = id_vehiculo
         self.id_empleado = id_empleado
-        self.fecha_hora_inicio = fecha_hora_inicio
-        self.fecha_hora_fin_prevista = fecha_hora_fin_prevista
-        self.fecha_hora_fin_real = fecha_hora_fin_real
+        self.fecha_hora_inicio = to_iso(fecha_hora_inicio)
+        self.fecha_hora_fin_prevista = to_iso(fecha_hora_fin_prevista)
+        self.fecha_hora_fin_real = to_iso(fecha_hora_fin_real)
         self.costo_total = costo_total
         self.estado = estado
 
@@ -366,18 +464,73 @@ class Alquiler:
         if row:
             return Alquiler(*row)
         return None
-    
+
     @staticmethod
-    def devolver():
-        """Marca el alquiler como finalizado y actualiza el vehículo a 'disponible'."""
-        
+    def get_all():
+        conn = database.get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM Alquileres")
+        rows = cur.fetchall()
+        conn.close()
+        return [Alquiler(*row) for row in rows]
+
+    def devolver(self):
+        """Marca el alquiler como finalizado, calcula costo_total y libera el vehículo."""
+        # self is an instance (Alquiler)
         if self.estado != 'activo':
             print(f"Alquiler #{self.id_alquiler} no está activo. No se puede devolver.")
             return False
-        
-        conn = database.get_db_connection()
-        cursor = conn.cursor()
+
+        # Parse dates robustamente (intentar varios formatos)
+        def parse_dt(s):
+            fmts = ["%Y-%m-%d %H:%M:%S", "%Y-%m-%d", "%d/%m/%Y %H:%M:%S", "%d/%m/%Y"]
+            for f in fmts:
+                try:
+                    return datetime.strptime(s, f)
+                except Exception:
+                    continue
+            raise ValueError(f"No se pudo parsear la fecha: {s}")
+
         try:
+            inicio_dt = parse_dt(self.fecha_hora_inicio)
+        except Exception as e:
+            print("Error parse inicio:", e)
+            return False
+
+        now_dt = datetime.now()
+        dias = max(1, ceil((now_dt - inicio_dt).total_seconds() / 86400))
+        # obtener precio diario del vehiculo
+        veh = Vehiculo.get_by_id(self.id_vehiculo)
+        if not veh:
+            print("Vehículo no encontrado al devolver.")
+            return False
+        precio_diario = float(veh.precio_diario)
+
+        costo = dias * precio_diario
+
+        conn = database.get_db_connection()
+        cur = conn.cursor()
+        try:
+            fecha_fin_real_str = now_dt.strftime("%Y-%m-%d %H:%M:%S")
+            cur.execute(
+                "UPDATE Alquileres SET fecha_hora_fin_real = ?, costo_total = ?, estado = ? WHERE id_alquiler = ?",
+                (fecha_fin_real_str, costo, 'finalizado', self.id_alquiler)
+            )
+            cur.execute("UPDATE Vehiculos SET estado = 'disponible' WHERE id_vehiculo = ?", (self.id_vehiculo,))
+            conn.commit()
+
+            # actualizar atributos del objeto en memoria
+            self.fecha_hora_fin_real = fecha_fin_real_str
+            self.costo_total = costo
+            self.estado = 'finalizado'
+            print(f"Alquiler #{self.id_alquiler} devuelto. Costo: {costo}, días: {dias}")
+            return True
+        except Exception as e:
+            print("Error al devolver alquiler:", e)
+            conn.rollback()
+            return False
+        finally:
+            conn.close()
 
 
 # Puedes seguir añadiendo las clases para Empleado, Mantenimiento, Multa, Danio, etc.
@@ -388,8 +541,8 @@ class Mantenimiento:
     def __init__(self, id_mantenimiento, id_vehiculo, fecha_hora_inicio, fecha_hora_fin, descripcion, costo):
         self.id_mantenimiento = id_mantenimiento
         self.id_vehiculo = id_vehiculo
-        self.fecha_hora_inicio = fecha_hora_inicio
-        self.fecha_hora_fin = fecha_hora_fin
+        self.fecha_hora_inicio = to_iso(fecha_hora_inicio)
+        self.fecha_hora_fin = to_iso(fecha_hora_fin)
         self.descripcion = descripcion
         self.costo = costo
 
@@ -444,7 +597,7 @@ class Multa:
         self.id_alquiler = id_alquiler
         self.descripcion = descripcion
         self.monto = monto
-        self.fecha_hora_multa = fecha_hora_multa
+        self.fecha_hora_multa = to_iso(fecha_hora_multa)
         self.estado = estado
     
     def __repr__(self):
@@ -498,7 +651,7 @@ class Danio:
         self.id_alquiler = id_alquiler
         self.descripcion = descripcion
         self.costo_reparacion = costo_reparacion
-        self.fecha_hora_reporte = fecha_hora_reporte
+        self.fecha_hora_reporte = to_iso(fecha_hora_reporte)
         self.estado = estado
 
     def __repr__(self):
@@ -549,7 +702,7 @@ class Factura:
     def __init__(self, id_factura, id_alquiler, fecha_hora_emision, monto_total, estado_pago):
         self.id_factura = id_factura
         self.id_alquiler = id_alquiler
-        self.fecha_hora_emision = fecha_hora_emision
+        self.fecha_hora_emision = to_iso(fecha_hora_emision)
         self.monto_total = monto_total
         self.estado_pago = estado_pago
 

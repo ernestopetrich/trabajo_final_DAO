@@ -1,8 +1,9 @@
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Path
 from pydantic import BaseModel, ConfigDict
 from typing import List
 import database
+from utils import to_iso
 # Importamos los modelos de la lógica de BD con un alias "Model"
 # para evitar colisiones de nombres con los modelos Pydantic.
 from models import (
@@ -161,7 +162,39 @@ def api_get_cliente_by_id(cliente_id: int):
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
     return cliente
+@app.get("/clientes/", response_model=List[Cliente], tags=["Clientes"])
+def api_list_clientes():
+    clientes = ClienteModel.get_all()
+    return clientes
 
+@app.put("/clientes/{cliente_id}", response_model=Cliente, tags=["Clientes"])
+def api_update_cliente(cliente_id: int, cliente: ClienteCreate):
+    db_cliente = ClienteModel.get_by_id(cliente_id)
+    if not db_cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    actualizado = ClienteModel.update(
+        cliente_id,
+        tipo_dni=cliente.tipo_dni,
+        dni=cliente.dni,
+        nombre=cliente.nombre,
+        apellido=cliente.apellido,
+        telefono=cliente.telefono,
+        email=cliente.email,
+        direccion=cliente.direccion
+    )
+    if not actualizado:
+        raise HTTPException(status_code=500, detail="Error al actualizar cliente")
+    return actualizado
+
+@app.delete("/clientes/{cliente_id}", tags=["Clientes"])
+def api_delete_cliente(cliente_id: int):
+    db_cliente = ClienteModel.get_by_id(cliente_id)
+    if not db_cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    ok = ClienteModel.delete(cliente_id)
+    if not ok:
+        raise HTTPException(status_code=400, detail="No se pudo eliminar cliente (tal vez tiene registros relacionados)")
+    return {"detail": "Cliente eliminado"}
 
 
 # Vehículos Endpoints
@@ -188,6 +221,33 @@ def api_list_vehiculos():
     vehiculos = VehiculoModel.get_all()
     return vehiculos
 
+@app.put("/vehiculos/{vehiculo_id}", response_model=Vehiculo, tags=["Vehículos"])
+def api_update_vehiculo(vehiculo_id: int, vehiculo: VehiculoCreate):
+    db_veh = VehiculoModel.get_by_id(vehiculo_id)
+    if not db_veh:
+        raise HTTPException(status_code=404, detail="Vehículo no encontrado")
+    actualizado = VehiculoModel.update(
+        vehiculo_id,
+        patente=vehiculo.patente,
+        marca=vehiculo.marca,
+        modelo=vehiculo.modelo,
+        nombre=vehiculo.nombre,
+        precio_diario=vehiculo.precio_diario
+    )
+    if not actualizado:
+        raise HTTPException(status_code=500, detail="Error al actualizar vehículo")
+    return actualizado
+
+@app.delete("/vehiculos/{vehiculo_id}", tags=["Vehículos"])
+def api_delete_vehiculo(vehiculo_id: int):
+    db_veh = VehiculoModel.get_by_id(vehiculo_id)
+    if not db_veh:
+        raise HTTPException(status_code=404, detail="Vehículo no encontrado")
+    ok = VehiculoModel.delete(vehiculo_id)
+    if not ok:
+        raise HTTPException(status_code=400, detail="No se pudo eliminar vehículo (tal vez está alquilado)")
+    return {"detail": "Vehículo eliminado"}
+
 
 # Empleados Endpoints
 @app.get("/empleados/", response_model=List[Empleado], tags=["Empleados"])
@@ -205,8 +265,8 @@ def api_create_reserva(reserva: ReservaCreate):
     """
     # Validar que existen los objetos
 
-    f_i = datetime.strptime(reserva.fecha_inicio, "%d/%m/%Y")
-    f_f = datetime.strptime(reserva.fecha_fin, "%d/%m/%Y")
+    f_i = datetime.strptime(to_iso(reserva.fecha_inicio), "%Y-%m-%d %H:%M:%S")
+    f_f = datetime.strptime(to_iso(reserva.fecha_fin), "%Y-%m-%d %H:%M:%S")
     print(f_i, f_f)
     if f_i >= f_f:
         raise HTTPException(status_code=400, detail="La fecha de inicio debe ser anterior a la fecha de fin")
@@ -227,8 +287,8 @@ def api_create_reserva(reserva: ReservaCreate):
     nueva_reserva = ReservaModel.create(
         id_cliente=reserva.id_cliente,
         id_vehiculo=reserva.id_vehiculo,
-        fecha_inicio=reserva.fecha_inicio,
-        fecha_fin=reserva.fecha_fin,
+        fecha_inicio=to_iso(reserva.fecha_inicio),
+        fecha_fin=to_iso(reserva.fecha_fin),
         estado='confirmada' # O 'pendiente' si requiere aprobación
     )
     if not nueva_reserva:
@@ -274,14 +334,25 @@ def api_create_alquiler(alquiler: AlquilerCreate):
         id_cliente=alquiler.id_cliente,
         id_vehiculo=alquiler.id_vehiculo,
         id_empleado=alquiler.id_empleado,
-        fecha_hora_inicio=alquiler.fecha_hora_inicio,
-        fecha_hora_fin_prevista=alquiler.fecha_hora_fin_prevista
+        fecha_hora_inicio=to_iso(alquiler.fecha_hora_inicio),
+        fecha_hora_fin_prevista=to_iso(alquiler.fecha_hora_fin_prevista)
     )
     
     if not nuevo_alquiler:
         raise HTTPException(status_code=500, detail="Error al crear el alquiler")
 
     return nuevo_alquiler
+@app.get("/alquileres/", response_model=List[Alquiler], tags=["Operaciones"])
+def api_list_alquileres():
+    alquileres = AlquilerModel.get_all()
+    return alquileres
+
+@app.get("/alquileres/{alquiler_id}", response_model=Alquiler, tags=["Operaciones"])
+def api_get_alquiler_by_id(alquiler_id: int):
+    alquiler = AlquilerModel.get_by_id(alquiler_id)
+    if not alquiler:
+        raise HTTPException(status_code=404, detail="Alquiler no encontrado")
+    return alquiler
 
 @app.post("/alquileres/reserva", response_model=Alquiler, tags=["Operaciones"])
 def api_create_alquiler_from_reserva(rsrv: ReservaAPI):
@@ -295,10 +366,18 @@ def api_create_alquiler_from_reserva(rsrv: ReservaAPI):
     if not reserva:
         raise HTTPException(status_code=404, detail="Reserva no encontrada")
     
-    if reserva.fecha_inicio < datetime.now().strftime("%d/%m/%Y"):
+    # Convertimos la fecha de inicio de la reserva al formato ISO
+    inicio = datetime.strptime(to_iso(reserva.fecha_inicio), "%Y-%m-%d %H:%M:%S")
+
+    # Fecha actual
+    hoy = datetime.now()
+
+    # Validación 1: la fecha de inicio no puede ser anterior al día de hoy
+    if inicio < hoy:
         raise HTTPException(status_code=400, detail="La fecha de inicio de la reserva ya pasó")
-    
-    elif reserva.fecha_inicio > (datetime.now() + timedelta(days=2)).strftime("%d/%m/%Y"):
+
+    # Validación 2: solo se puede convertir si faltan 0, 1 o 2 días
+    if inicio > hoy + timedelta(days=2):
         raise HTTPException(status_code=400, detail="Solo se pueden convertir reservas con hasta 2 días de anticipación")
 
     if reserva.estado != 'confirmada':
@@ -321,8 +400,8 @@ def api_create_alquiler_from_reserva(rsrv: ReservaAPI):
         id_cliente=reserva.id_cliente,
         id_vehiculo=reserva.id_vehiculo,
         id_empleado=rsrv.id_empleado,
-        fecha_hora_inicio=reserva.fecha_inicio,
-        fecha_hora_fin_prevista=reserva.fecha_fin
+        fecha_hora_inicio=to_iso(reserva.fecha_inicio),
+        fecha_hora_fin_prevista=to_iso(reserva.fecha_fin)
     )
     
     if not nuevo_alquiler:
