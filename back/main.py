@@ -1,5 +1,6 @@
 import uvicorn
 from fastapi import FastAPI, HTTPException, Path
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict
 from typing import List
 import database
@@ -110,6 +111,21 @@ app = FastAPI(
     version="1.0.0"
 )
 
+
+origins = [
+    "http://localhost:5173",  # El origen de tu frontend React
+    "http://127.0.0.1:5173"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,       # Permite los orígenes en la lista
+    allow_credentials=True,    # Permite cookies
+    allow_methods=["*"],       # Permite todos los métodos (GET, POST, PUT, etc.)
+    allow_headers=["*"],       # Permite todos los headers
+)
+
+
 def setup_database():
     """Inicializa la base de datos y crea datos de ejemplo si es nueva."""
     is_new_db = not os.path.exists(database.DATABASE_FILE)
@@ -162,6 +178,7 @@ def api_get_cliente_by_id(cliente_id: int):
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
     return cliente
+
 @app.get("/clientes/", response_model=List[Cliente], tags=["Clientes"])
 def api_list_clientes():
     clientes = ClienteModel.get_all()

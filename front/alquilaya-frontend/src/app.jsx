@@ -12,11 +12,21 @@ export default function App(){
       <header className="header">
         <h1>AlquilaYa</h1>
         <nav>
-          <button onClick={()=>setView("dashboard")}>Dashboard</button>
-          <button onClick={()=>setView("clientes")}>Clientes</button>
-          <button onClick={()=>setView("vehiculos")}>Vehículos</button>
-          <button onClick={()=>setView("alquileres")}>Alquileres</button>
-          <button onClick={()=>setView("reservas")}>Reservas</button>
+          <button style={{ color: 'black' }} onClick={() => setView("dashboard")}>
+            Dashboard
+          </button>
+          <button style={{ color: 'black' }} onClick={() => setView("clientes")}>
+            Clientes
+          </button>
+          <button style={{ color: 'black' }} onClick={() => setView("vehiculos")}>
+            Vehículos
+          </button>
+          <button style={{ color: 'black' }} onClick={() => setView("alquileres")}>
+            Alquileres
+          </button>
+          <button style={{ color: 'black' }} onClick={() => setView("reservas")}>
+            Reservas
+          </button>
         </nav>
       </header>
       <main>
