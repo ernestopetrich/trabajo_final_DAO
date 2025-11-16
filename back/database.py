@@ -11,15 +11,9 @@ def get_db_connection():
     return conn
 
 def create_tables():
-    """
-    Crea las tablas en la base de datos si no existen.
-    Basado en el DER y añadiendo la tabla de Reservas.
-    """
-    if os.path.exists(DATABASE_FILE):
-        print("La base de datos ya existe. No se crearán tablas de nuevo.")
-        return
+    """Crea las tablas si no existen, incluso si la base ya existe."""
+    print("Verificando y creando tablas...")
 
-    print("Creando base de datos y tablas...")
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -57,8 +51,7 @@ def create_tables():
         modelo TEXT NOT NULL,
         nombre TEXT,
         precio_diario REAL NOT NULL,
-        estado TEXT NOT NULL DEFAULT 'disponible' 
-        -- Estados: disponible, alquilado, mantenimiento
+        estado TEXT NOT NULL DEFAULT 'disponible'
     );
     """)
 
@@ -73,15 +66,14 @@ def create_tables():
         fecha_hora_fin_prevista TEXT NOT NULL,
         fecha_hora_fin_real TEXT,
         costo_total REAL,
-        estado TEXT NOT NULL DEFAULT 'activo', 
-        -- Estados: activo, finalizado, cancelado
+        estado TEXT NOT NULL DEFAULT 'activo',
         FOREIGN KEY (id_cliente) REFERENCES Clientes (id_cliente),
         FOREIGN KEY (id_vehiculo) REFERENCES Vehiculos (id_vehiculo),
         FOREIGN KEY (id_empleado) REFERENCES Empleados (id_empleado)
     );
     """)
 
-    # Reservas (¡NUEVA TABLA SOLICITADA!)
+    # Reservas
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS Reservas (
         id_reserva INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -90,7 +82,6 @@ def create_tables():
         fecha_inicio TEXT NOT NULL,
         fecha_fin TEXT NOT NULL,
         estado TEXT NOT NULL DEFAULT 'pendiente',
-        -- Estados: pendiente, confirmada, cancelada, completada
         FOREIGN KEY (id_cliente) REFERENCES Clientes (id_cliente),
         FOREIGN KEY (id_vehiculo) REFERENCES Vehiculos (id_vehiculo)
     );
@@ -122,7 +113,7 @@ def create_tables():
     );
     """)
 
-    # Danios
+    # Daños
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS Danios (
         id_danio INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -134,8 +125,8 @@ def create_tables():
         FOREIGN KEY (id_alquiler) REFERENCES Alquileres (id_alquiler)
     );
     """)
-    
-    # Facturas (Faltaría Detalle_Factura, pero lo omitimos por simplicidad inicial)
+
+    # Facturas
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS Facturas (
         id_factura INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -149,7 +140,4 @@ def create_tables():
 
     conn.commit()
     conn.close()
-    print("Tablas creadas exitosamente.")
-
-if __name__ == "__main__":
-    create_tables()
+    print("Tablas verificadas/creadas correctamente.")
