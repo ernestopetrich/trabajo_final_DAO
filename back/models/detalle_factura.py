@@ -18,7 +18,7 @@ class DetalleFactura:
         cursor = conn.cursor()
         try:
             cursor.execute(
-                "INSERT INTO Detalle_Factura (id_factura, descripcion, monto) VALUES (?, ?, ?, ?)",
+                "INSERT INTO Detalle_Factura (id_factura, descripcion, monto) VALUES (?, ?, ?)",
                 (id_factura, descripcion, monto)
             )
             conn.commit()
