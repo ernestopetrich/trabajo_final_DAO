@@ -43,6 +43,18 @@ class Factura:
         return None
 
     @staticmethod
+    def get_by_alquiler(id_alquiler):
+        """Obtiene una factura por el ID de alquiler."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Facturas WHERE id_alquiler = ?", (id_alquiler,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return Factura(*row)
+        return None
+
+    @staticmethod
     def get_all():
         """Obtiene todas las facturas."""
         conn = database.get_db_connection()
@@ -51,3 +63,25 @@ class Factura:
         rows = cursor.fetchall()
         conn.close()
         return [Factura(*row) for row in rows]
+    
+    @staticmethod
+    def update(id_factura, data):
+        """Actualiza una factura existente."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        fields = []
+        values = []
+        for key, value in data.items():
+            fields.append(f"{key} = ?")
+            values.append(value)
+        values.append(id_factura)
+        sql = f"UPDATE Facturas SET {', '.join(fields)} WHERE id_factura = ?"
+        try:
+            cursor.execute(sql, values)
+            conn.commit()
+            return Factura.get_by_id(id_factura)
+        except sqlite3.Error as e:
+            print(f"Error al actualizar factura: {e}")
+            return None
+        finally:
+            conn.close()

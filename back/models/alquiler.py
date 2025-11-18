@@ -73,3 +73,20 @@ class Alquiler:
         cursor.execute("UPDATE Alquileres SET estado = ? WHERE id_alquiler = ?", (nuevo_estado, self.id_alquiler))
         conn.commit()
         conn.close()
+
+
+    def calcular_monto(self):
+        """Calcula el monto total del alquiler basado en la duración y el precio diario del vehículo."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT precio_diario FROM Vehiculos WHERE id_vehiculo = ?", (self.id_vehiculo,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            precio_diario = row[0]
+            from datetime import datetime
+            fecha_inicio = datetime.fromisoformat(self.fecha_hora_inicio)
+            fecha_fin = datetime.fromisoformat(self.fecha_hora_fin_prevista)
+            dias_alquiler = (fecha_fin - fecha_inicio).days + 1  # Incluir el día de inicio
+            return dias_alquiler * precio_diario
+        return 0

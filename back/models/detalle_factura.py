@@ -2,25 +2,24 @@ import sqlite3
 import database
 
 class DetalleFactura:
-    def __init__(self, id_detalle, id_factura, descripcion, cantidad, precio_unitario):
+    def __init__(self, id_detalle, id_factura, descripcion, monto):
         self.id_detalle = id_detalle
         self.id_factura = id_factura
         self.descripcion = descripcion
-        self.cantidad = cantidad
-        self.precio_unitario = precio_unitario
+        self.monto = monto
 
     def __repr__(self):
         return f"<DetalleFactura #{self.id_detalle} (Factura: {self.id_factura}) - {self.descripcion}>"
     
     @staticmethod
-    def create(id_factura, descripcion, cantidad, precio_unitario):
+    def create(id_factura, descripcion, monto):
         """Crea un nuevo detalle de factura."""
         conn = database.get_db_connection()
         cursor = conn.cursor()
         try:
             cursor.execute(
-                "INSERT INTO Detalle_Factura (id_factura, descripcion, cantidad, precio_unitario) VALUES (?, ?, ?, ?)",
-                (id_factura, descripcion, cantidad, precio_unitario)
+                "INSERT INTO Detalle_Factura (id_factura, descripcion, monto) VALUES (?, ?, ?, ?)",
+                (id_factura, descripcion, monto)
             )
             conn.commit()
             return DetalleFactura.get_by_id(cursor.lastrowid)

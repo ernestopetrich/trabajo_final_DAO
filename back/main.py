@@ -49,19 +49,21 @@ def setup_database():
     is_new_db = not os.path.exists(database.DATABASE_FILE)
     database.create_tables()
 
-    
-    # Crear clientes de ejemplo
-    ClienteModel.create("DNI", "30123456", "Juan", "Perez", "1155443322", "juan@email.com", "Av. Siempre Viva 123")
-    ClienteModel.create("DNI", "35654321", "Maria", "Gomez", "1122334455", "maria@email.com", "Calle Falsa 456")
-        
-    # Crear empleado de ejemplo
-    EmpleadoModel.create("DNI", "28999111", "Carlos", "Lopez")
+    if is_new_db:
+        print("Base de datos creada por primera vez. Agregando datos de ejemplo...")
 
-    # Crear vehículos de ejemplo
-    VehiculoModel.create("AA123BB", "Ford", "Fiesta", "Compacto", 15000.0)
-    VehiculoModel.create("AC456DD", "Toyota", "Corolla", "Sedan", 22000.0)
-    VehiculoModel.create("AE789FF", "VW", "Amarok", "Camioneta", 35000.0)
-    print("Datos de ejemplo creados.")
+        # Crear clientes de ejemplo
+        ClienteModel.create("DNI", "30123456", "Juan", "Perez", "1155443322", "juan@email.com", "Av. Siempre Viva 123")
+        ClienteModel.create("DNI", "35654321", "Maria", "Gomez", "1122334455", "maria@email.com", "Calle Falsa 456")
+
+        # Crear empleado de ejemplo
+        EmpleadoModel.create("DNI", "28999111", "Carlos", "Lopez")
+
+        # Crear vehículos de ejemplo
+        VehiculoModel.create("AA123BB", "Ford", "Fiesta", "Compacto", 15000.0)
+        VehiculoModel.create("AC456DD", "Toyota", "Corolla", "Sedan", 22000.0)
+        VehiculoModel.create("AE789FF", "VW", "Amarok", "Camioneta", 35000.0)
+        print("Datos de ejemplo creados.")
 
 
 # --- RUTA PRINCIPAL ---

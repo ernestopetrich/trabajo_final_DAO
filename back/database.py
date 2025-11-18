@@ -124,6 +124,17 @@ def create_tables():
     );
     """)
 
+    # Detalle Factura (NUEVO)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS Detalle_factura (
+        id_detalle INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_factura INTEGER NOT NULL,
+        descripcion TEXT NOT NULL, 
+        monto REAL NOT NULL,
+        FOREIGN KEY (id_factura) REFERENCES Facturas (id_factura)
+    );
+    """)
+
     conn.commit()
     conn.close()
     print("Tablas verificadas/creadas correctamente.")
