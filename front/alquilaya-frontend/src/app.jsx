@@ -6,11 +6,7 @@ import Dashboard from "./pages/Dashboard.jsx";
 import Clientes from "./pages/Clientes.jsx";
 import Vehiculos from "./pages/Vehiculos.jsx";
 import Alquileres from "./pages/Alquileres.jsx";
-import Reservas from "./pages/Reservas.jsx";
 import Inicio from "./pages/Inicio.jsx";
-
-
-
 
 
 export default function App() {
@@ -30,9 +26,6 @@ export default function App() {
           <NavLink to="/alquileres" className="nav-item">
             Alquileres
           </NavLink>
-          <NavLink to="/reservas" className="nav-item">
-            Reservas
-          </NavLink>
           <NavLink to="/vehiculos" className="nav-item">
             Vehículos
           </NavLink>
@@ -49,7 +42,6 @@ export default function App() {
 
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/alquileres" element={<Alquileres />} />
-          <Route path="/reservas" element={<Reservas />} />
           <Route path="/vehiculos" element={<Vehiculos />} />
           <Route path="/clientes" element={<Clientes />} />
         </Routes>
