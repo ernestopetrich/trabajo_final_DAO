@@ -17,9 +17,11 @@ from routers.factura_router import router as factura_router
 
 
 # IMPORTS DIRECTOS DE MODELOS PARA CREAR DATOS DE EJEMPLO
-import models.cliente as ClienteModel
-import models.empleado as EmpleadoModel
-import models.vehiculo as VehiculoModel
+from models.cliente import Cliente as ClienteModel
+from models.vehiculo import Vehiculo as VehiculoModel
+from models.reserva import Reserva as ReservaModel
+from models.alquiler import Alquiler as AlquilerModel
+from models.empleado import Empleado as EmpleadoModel
 
 
 
