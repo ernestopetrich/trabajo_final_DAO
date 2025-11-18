@@ -1,6 +1,6 @@
 import React, {useState} from "react";
 
-const empty = { tipo_dni:"DNI", dni:"", nombre:"", apellido:"", telefono:"", email:"", direccion:"" };
+const empty = { tipo_dni:"", dni:"", nombre:"", apellido:"", telefono:"", email:"", direccion:"" };
 
 export default function ClienteForm({onSubmit}){
   const [form, setForm] = useState(empty);
@@ -15,7 +15,17 @@ export default function ClienteForm({onSubmit}){
 
   return (
     <form className="card form" onSubmit={submit}>
-      <input name="tipo_dni" value={form.tipo_dni} onChange={change} placeholder="Tipo DNI" />
+      <select 
+        name="tipo_dni" 
+        value={form.tipo_dni} 
+        onChange={change} 
+        required
+      >
+        <option value="" disabled>Seleccione tipo de documento</option>
+        <option value="DNI">DNI</option>
+        <option value="PAS">Pasaporte</option>
+        <option value="CI">Cédula</option>
+</select>
       <input name="dni" value={form.dni} onChange={change} placeholder="DNI" />
       <input name="nombre" value={form.nombre} onChange={change} placeholder="Nombre" required />
       <input name="apellido" value={form.apellido} onChange={change} placeholder="Apellido" required />

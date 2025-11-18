@@ -26,13 +26,8 @@ export const createVehiculo = (payload) => API.post("/vehiculos/", payload);
 export const updateVehiculo = (id, payload) => API.put(`/vehiculos/${id}`, payload);
 export const deleteVehiculo = (id) => API.delete(`/vehiculos/${id}`);
 
-// Reservas
-export const getReservas = () => API.get("/reservas/");
-export const createReserva = (payload) => API.post("/reservas/", payload);
-export const confirmarReserva = (id) => API.patch(`/reservas/${id}/estado`, { estado: "confirmada" });
 
 // Alquileres
 export const getAlquileres = () => API.get("/alquileres/");
 export const createAlquiler = (payload) => API.post("/alquileres/", payload);
-export const createAlquilerFromReserva = (payload) => API.post("/alquileres/reserva", payload);
 export const devolverAlquiler = (id) => API.post(`/alquileres/${id}/devolver`);

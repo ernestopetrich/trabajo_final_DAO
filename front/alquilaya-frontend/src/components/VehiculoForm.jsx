@@ -1,6 +1,6 @@
 import React, {useState} from "react";
 
-const empty = { patente:"", marca:"", modelo:"", nombre:"", precio_diario:0 };
+const empty = { patente:"", marca:"", modelo:"", nombre:"", precio_diario:"" };
 
 export default function VehiculoForm({onSubmit}){
   const [form, setForm] = useState(empty);
@@ -13,7 +13,14 @@ export default function VehiculoForm({onSubmit}){
       <input name="marca" value={form.marca} onChange={change} placeholder="Marca" />
       <input name="modelo" value={form.modelo} onChange={change} placeholder="Modelo" />
       <input name="nombre" value={form.nombre} onChange={change} placeholder="Nombre" />
-      <input name="precio_diario" value={form.precio_diario} onChange={change} placeholder="Precio diario" type="number" />
+      <input
+        name="precio_diario"
+        value={form.precio_diario}
+        onChange={change}
+        placeholder="Precio diario (solo números)"
+        type="number"
+        step="any"
+      />
       <button className="btn primary" type="submit">Crear Vehículo</button>
     </form>
   );
