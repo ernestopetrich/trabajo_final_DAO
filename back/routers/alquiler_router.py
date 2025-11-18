@@ -1,8 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from schemas.alquiler_schema import AlquilerCreate, AlquilerResponse
 from services.alquiler_service import AlquilerService
-from schemas.reserva_schema import ReservaAPI
-from services.reserva_service import ReservaService
 
 
 
@@ -30,12 +28,3 @@ def devolver_alquiler(id_alquiler: int):
     if not devuelto:
         raise HTTPException(400, "No se pudo devolver el alquiler")
     return devuelto
-
-
-@router.post("/reserva", response_model=AlquilerResponse, tags=["Operaciones"])
-def api_create_alquiler_from_reserva(rsrv: ReservaAPI):
-    """
-    Convierte una reserva en un alquiler.
-    Verifica disponibilidad y actualiza el estado del vehículo a 'alquilado'.
-    """
-    ReservaService.reservaToAlquiler(rsrv.id_reserva, rsrv.id_empleado)

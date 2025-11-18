@@ -1,7 +1,6 @@
 from .cliente_schema import ClienteCreate
 from .empleado_schema import EmpleadoCreate
 from .vehiculo_schema import VehiculoCreate
-from .reserva_schema import ReservaCreate
 from .alquiler_schema import AlquilerCreate
 from .mantenimiento_schema import MantenimientoCreate
 from .multa_schema import MultaCreate

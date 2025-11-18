@@ -1,7 +1,6 @@
 from .cliente import Cliente
 from .empleado import Empleado
 from .vehiculo import Vehiculo
-from .reserva import Reserva
 from .alquiler import Alquiler
 from .mantenimiento import Mantenimiento
 from .multa import Multa

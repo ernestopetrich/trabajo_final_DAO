@@ -8,7 +8,6 @@ import database
 from routers.cliente_router import router as cliente_router
 from routers.empleado_router import router as empleado_router
 from routers.vehiculo_router import router as vehiculo_router
-from routers.reserva_router import router as reserva_router
 from routers.alquiler_router import router as alquiler_router
 from routers.mantenimiento_router import router as mantenimiento_router
 from routers.multa_router import router as multa_router
@@ -19,7 +18,6 @@ from routers.factura_router import router as factura_router
 # IMPORTS DIRECTOS DE MODELOS PARA CREAR DATOS DE EJEMPLO
 from models.cliente import Cliente as ClienteModel
 from models.vehiculo import Vehiculo as VehiculoModel
-from models.reserva import Reserva as ReservaModel
 from models.alquiler import Alquiler as AlquilerModel
 from models.empleado import Empleado as EmpleadoModel
 
@@ -51,19 +49,19 @@ def setup_database():
     is_new_db = not os.path.exists(database.DATABASE_FILE)
     database.create_tables()
 
-    if is_new_db:
-        # Crear clientes de ejemplo
-        ClienteModel.create("DNI", "30123456", "Juan", "Perez", "1155443322", "juan@email.com", "Av. Siempre Viva 123")
-        ClienteModel.create("DNI", "35654321", "Maria", "Gomez", "1122334455", "maria@email.com", "Calle Falsa 456")
+    
+    # Crear clientes de ejemplo
+    ClienteModel.create("DNI", "30123456", "Juan", "Perez", "1155443322", "juan@email.com", "Av. Siempre Viva 123")
+    ClienteModel.create("DNI", "35654321", "Maria", "Gomez", "1122334455", "maria@email.com", "Calle Falsa 456")
         
-        # Crear empleado de ejemplo
-        EmpleadoModel.create("DNI", "28999111", "Carlos", "Lopez")
+    # Crear empleado de ejemplo
+    EmpleadoModel.create("DNI", "28999111", "Carlos", "Lopez")
 
-        # Crear vehículos de ejemplo
-        VehiculoModel.create("AA123BB", "Ford", "Fiesta", "Compacto", 15000.0)
-        VehiculoModel.create("AC456DD", "Toyota", "Corolla", "Sedan", 22000.0)
-        VehiculoModel.create("AE789FF", "VW", "Amarok", "Camioneta", 35000.0)
-        print("Datos de ejemplo creados.")
+    # Crear vehículos de ejemplo
+    VehiculoModel.create("AA123BB", "Ford", "Fiesta", "Compacto", 15000.0)
+    VehiculoModel.create("AC456DD", "Toyota", "Corolla", "Sedan", 22000.0)
+    VehiculoModel.create("AE789FF", "VW", "Amarok", "Camioneta", 35000.0)
+    print("Datos de ejemplo creados.")
 
 
 # --- RUTA PRINCIPAL ---
@@ -77,7 +75,6 @@ setup_database()
 app.include_router(cliente_router)
 app.include_router(empleado_router)
 app.include_router(vehiculo_router)
-app.include_router(reserva_router)
 app.include_router(alquiler_router)
 app.include_router(mantenimiento_router)
 app.include_router(multa_router)

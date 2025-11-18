@@ -73,20 +73,6 @@ def create_tables():
     );
     """)
 
-    # Reservas
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS Reservas (
-        id_reserva INTEGER PRIMARY KEY AUTOINCREMENT,
-        id_cliente INTEGER NOT NULL,
-        id_vehiculo INTEGER NOT NULL,
-        fecha_inicio TEXT NOT NULL,
-        fecha_fin TEXT NOT NULL,
-        estado TEXT NOT NULL DEFAULT 'pendiente',
-        FOREIGN KEY (id_cliente) REFERENCES Clientes (id_cliente),
-        FOREIGN KEY (id_vehiculo) REFERENCES Vehiculos (id_vehiculo)
-    );
-    """)
-
     # Mantenimientos
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS Mantenimientos (
