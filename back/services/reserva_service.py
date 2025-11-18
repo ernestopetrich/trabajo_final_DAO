@@ -64,7 +64,7 @@ class ReservaService:
         nuevo_alquiler = AlquilerModel.create(
             id_cliente=reserva.id_cliente,
             id_vehiculo=reserva.id_vehiculo,
-            id_empleado=rsrv.id_empleado,
+            id_empleado=id_empleado,
             fecha_hora_inicio=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             fecha_hora_fin_prevista=reserva.fecha_fin
         )

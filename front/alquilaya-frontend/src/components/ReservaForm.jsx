@@ -29,9 +29,9 @@ export default function ReservaForm({onSubmit, clientes = [], vehiculos = []}){
         {vehiculos.map(v => <option key={v.id_vehiculo} value={v.id_vehiculo}>{v.patente} - {v.nombre || v.modelo}</option>)}
       </select>
       <label>Fecha inicio (YYYY-MM-DD)</label>
-      <input name="fecha_inicio" value={form.fecha_inicio} onChange={change} placeholder="2025-02-15" required />
+      <input name="fecha_inicio" type="date" value={form.fecha_inicio} onChange={change} placeholder="2025-02-15" required />
       <label>Fecha fin (YYYY-MM-DD)</label>
-      <input name="fecha_fin" value={form.fecha_fin} onChange={change} placeholder="2025-02-17" required />
+      <input name="fecha_fin" type="date" value={form.fecha_fin} onChange={change} placeholder="2025-02-17" required />
       <button className="btn primary" type="submit">Crear Reserva</button>
     </form>
   );

@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import ReservaForm from "../components/ReservaForm";
 import ReservaList from "../components/ReservaList";
-import { getReservas, createReserva, getVehiculos, getClientes, createAlquilerFromReserva } from "../api/api";
+import { getReservas, createReserva, getVehiculos, getClientes, createAlquilerFromReserva, confirmarReserva } from "../api/api";
 
 export default function Reservas(){
   const [reservas, setReservas] = useState([]);
@@ -16,7 +16,10 @@ export default function Reservas(){
 
   useEffect(()=>{ loadAll(); }, []);
 
+  async function handleConfirmar(id_reserva){ await confirmarReserva(id_reserva); loadAll(); }
+
   async function handleCreate(payload){ await createReserva(payload); loadAll(); }
+  
   async function handleConvert(id_reserva, id_empleado){
     try{
       await createAlquilerFromReserva({ id_reserva, id_empleado });
@@ -29,7 +32,7 @@ export default function Reservas(){
     <div className="page">
       <h2>Reservas</h2>
       <ReservaForm onSubmit={handleCreate} clientes={clientes} vehiculos={vehiculos}/>
-      <ReservaList items={reservas} onConvert={handleConvert}/>
+      <ReservaList items={reservas} onConvert={handleConvert} onConfirmar={handleConfirmar}/>
     </div>
   );
 }
