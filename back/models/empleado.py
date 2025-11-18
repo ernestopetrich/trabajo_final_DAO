@@ -9,36 +9,58 @@ class Empleado:
         self.nombre = nombre
         self.apellido = apellido
 
+    def __repr__(self):
+        return f"<Empleado {self.nombre} {self.apellido} (DNI: {self.dni})>"
+
     @staticmethod
     def create(tipo_dni, dni, nombre, apellido):
+        """Crea un nuevo empleado en la BD."""
         conn = database.get_db_connection()
-        cur = conn.cursor()
+        cursor = conn.cursor()
         try:
-            cur.execute("""
-                INSERT INTO Empleados (tipo_dni, dni, nombre, apellido)
-                VALUES (?, ?, ?, ?)
-            """, (tipo_dni, dni, nombre, apellido))
+            cursor.execute(
+                "INSERT INTO Empleados (tipo_dni, dni, nombre, apellido) VALUES (?, ?, ?, ?)",
+                (tipo_dni, dni, nombre, apellido)
+            )
             conn.commit()
-            return Empleado.get_by_id(cur.lastrowid)
-        except sqlite3.IntegrityError:
+            return Empleado.get_by_id(cursor.lastrowid)
+        except sqlite3.IntegrityError as e:
+            print(f"Error al crear empleado: {e}")
             return None
         finally:
             conn.close()
-
+        
     @staticmethod
     def get_all():
+        """Obtiene todos los empleados."""
         conn = database.get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM Empleados")
-        rows = cur.fetchall()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Empleados")
+        rows = cursor.fetchall()
         conn.close()
         return [Empleado(*row) for row in rows]
 
     @staticmethod
     def get_by_id(id_empleado):
+        """Obtiene un empleado por su ID."""
         conn = database.get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM Empleados WHERE id_empleado=?", (id_empleado,))
-        row = cur.fetchone()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Empleados WHERE id_empleado = ?", (id_empleado,))
+        row = cursor.fetchone()
         conn.close()
-        return Empleado(*row) if row else None
+        if row:
+            return Empleado(*row)
+        return None
+    
+    @staticmethod
+    def get_by_dni(dni):
+        """Obtiene un empleado por su DNI."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Empleados WHERE dni = ?", (dni,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return Empleado(*row)
+        return None
+

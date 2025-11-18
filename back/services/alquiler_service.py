@@ -17,7 +17,8 @@ class AlquilerService:
     @staticmethod
     def devolver(id_alquiler):
         alquiler = Alquiler.get_by_id(id_alquiler)
+        print(alquiler)
         if alquiler:
-            alquiler.devolver()
+            alquiler.update_estado("finalizado")
             return alquiler
         return None

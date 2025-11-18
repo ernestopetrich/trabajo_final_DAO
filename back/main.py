@@ -16,6 +16,14 @@ from routers.danio_router import router as danio_router
 from routers.factura_router import router as factura_router
 
 
+# IMPORTS DIRECTOS DE MODELOS PARA CREAR DATOS DE EJEMPLO
+import models.cliente as ClienteModel
+import models.empleado as EmpleadoModel
+import models.vehiculo as VehiculoModel
+
+
+
+
 app = FastAPI(
     title="API de AlquilaYa",
     description="API para la gestión de alquiler de vehículos.",
@@ -42,8 +50,18 @@ def setup_database():
     database.create_tables()
 
     if is_new_db:
-        print("Base de datos nueva. Sin datos de ejemplo cargados automáticamente.")
-        # Si querés seeds, los agregamos luego.
+        # Crear clientes de ejemplo
+        ClienteModel.create("DNI", "30123456", "Juan", "Perez", "1155443322", "juan@email.com", "Av. Siempre Viva 123")
+        ClienteModel.create("DNI", "35654321", "Maria", "Gomez", "1122334455", "maria@email.com", "Calle Falsa 456")
+        
+        # Crear empleado de ejemplo
+        EmpleadoModel.create("DNI", "28999111", "Carlos", "Lopez")
+
+        # Crear vehículos de ejemplo
+        VehiculoModel.create("AA123BB", "Ford", "Fiesta", "Compacto", 15000.0)
+        VehiculoModel.create("AC456DD", "Toyota", "Corolla", "Sedan", 22000.0)
+        VehiculoModel.create("AE789FF", "VW", "Amarok", "Camioneta", 35000.0)
+        print("Datos de ejemplo creados.")
 
 
 # --- RUTA PRINCIPAL ---

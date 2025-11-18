@@ -15,3 +15,8 @@ class ReservaEstadoUpdate(BaseModel):
 class ReservaResponse(ReservaBase):
     id_reserva: int
     estado: str
+
+
+class ReservaAPI(BaseModel):
+    id_reserva: int
+    id_empleado: int
