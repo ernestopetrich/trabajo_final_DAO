@@ -1,41 +1,60 @@
-import { useState } from "react";
-import Clientes from "./pages/Clientes";
-import Vehiculos from "./pages/Vehiculos";
-import Alquileres from "./pages/Alquileres";
-import Reservas from "./pages/Reservas";
-import Dashboard from "./pages/Dashboard";
+// src/app.jsx
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, NavLink } from "react-router-dom";
 
-export default function App(){
-  const [view, setView] = useState("dashboard");
+import Dashboard from "./pages/Dashboard.jsx";
+import Clientes from "./pages/Clientes.jsx";
+import Vehiculos from "./pages/Vehiculos.jsx";
+import Alquileres from "./pages/Alquileres.jsx";
+import Reservas from "./pages/Reservas.jsx";
+import Inicio from "./pages/Inicio.jsx";
+
+
+
+
+
+export default function App() {
   return (
-    <div className="app">
-      <header className="header">
-        <h1>AlquilaYa</h1>
-        <nav>
-          <button style={{ color: 'black' }} onClick={() => setView("dashboard")}>
+    <Router>
+      <header className="topnav">
+        <div className="nav-left">
+          <span className="logo">🚗 AlquilaYa</span>
+        </div>
+
+        <nav className="nav-links">
+          <NavLink to="/" end className="nav-item">Inicio</NavLink>
+
+          <NavLink to="/dashboard" end className="nav-item">
             Dashboard
-          </button>
-          <button style={{ color: 'black' }} onClick={() => setView("clientes")}>
-            Clientes
-          </button>
-          <button style={{ color: 'black' }} onClick={() => setView("vehiculos")}>
-            Vehículos
-          </button>
-          <button style={{ color: 'black' }} onClick={() => setView("alquileres")}>
+          </NavLink>
+          <NavLink to="/alquileres" className="nav-item">
             Alquileres
-          </button>
-          <button style={{ color: 'black' }} onClick={() => setView("reservas")}>
+          </NavLink>
+          <NavLink to="/reservas" className="nav-item">
             Reservas
-          </button>
+          </NavLink>
+          <NavLink to="/vehiculos" className="nav-item">
+            Vehículos
+          </NavLink>
+          <NavLink to="/clientes" className="nav-item">
+            Clientes
+          </NavLink>
         </nav>
       </header>
-      <main>
-        {view === "dashboard" && <Dashboard />}
-        {view === "clientes" && <Clientes />}
-        {view === "vehiculos" && <Vehiculos />}
-        {view === "alquileres" && <Alquileres />}
-        {view === "reservas" && <Reservas />}
+
+      <main className="main-content">
+
+        <Routes>
+          <Route path="/" element={<Inicio />} />
+
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/alquileres" element={<Alquileres />} />
+          <Route path="/reservas" element={<Reservas />} />
+          <Route path="/vehiculos" element={<Vehiculos />} />
+          <Route path="/clientes" element={<Clientes />} />
+        </Routes>
+
       </main>
-    </div>
+    </Router>
   );
 }
