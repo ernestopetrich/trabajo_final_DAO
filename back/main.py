@@ -13,6 +13,8 @@ from routers.mantenimiento_router import router as mantenimiento_router
 from routers.multa_router import router as multa_router
 from routers.danio_router import router as danio_router
 from routers.factura_router import router as factura_router
+from routers.reportes_router import router as reportes_router
+
 
 
 # IMPORTS DIRECTOS DE MODELOS PARA CREAR DATOS DE EJEMPLO
@@ -83,6 +85,9 @@ app.include_router(mantenimiento_router)
 app.include_router(multa_router)
 app.include_router(danio_router)
 app.include_router(factura_router)
+app.include_router(reportes_router)
+
+
 
 
 # --- RUN SERVER ---
