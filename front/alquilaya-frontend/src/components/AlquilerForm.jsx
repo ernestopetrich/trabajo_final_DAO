@@ -13,8 +13,13 @@ export default function AlquilerForm({onSubmit, clientes=[], vehiculos=[]}){
       </select>
       <select name="id_vehiculo" value={form.id_vehiculo} onChange={change} required>
         <option value="">Vehículo</option>
-        {vehiculos.map(v => <option key={v.id_vehiculo} value={v.id_vehiculo}>{v.patente} {v.nombre||v.modelo}</option>)}
+        {vehiculos.map(v => (
+          <option key={v.id_vehiculo} value={v.id_vehiculo}>
+            {v.patente} — {v.marca} {v.modelo}
+          </option>
+        ))}
       </select>
+
       <label>Inicio</label>
       <input name="fecha_hora_inicio" type="datetime-local" value={form.fecha_hora_inicio} onChange={change} required />
       <label>Fin previsto</label>
