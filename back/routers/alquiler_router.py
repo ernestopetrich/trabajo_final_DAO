@@ -63,3 +63,10 @@ def devolver_alquiler(id_alquiler: int):
     VehiculoService.update(alq.id_vehiculo, { "estado": "disponible" })
 
     return alq
+
+@router.post("/{id_alquiler}/delete")
+def delete_alquiler(id_alquiler: int):
+    success = AlquilerService.delete(id_alquiler)
+    if not success:
+        raise HTTPException(404, "Alquiler no encontrado o no se pudo dar de baja")
+    return {"detail": "Alquiler {id_alquiler} dado de baja exitosamente"}

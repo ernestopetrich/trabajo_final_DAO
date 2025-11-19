@@ -34,8 +34,8 @@ app = FastAPI(
 
 # --- CORS ---
 origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173"
+    "http://localhost:5174",
+    "http://127.0.0.1:5174"
 ]
 
 app.add_middleware(
@@ -64,9 +64,9 @@ def setup_database():
         EmpleadoModel.create("DNI", "28999111", "Carlos", "Lopez")
 
         # Crear vehículos de ejemplo
-        VehiculoModel.create("AA123BB", "Ford", "Fiesta", "Compacto", 15000.0)
-        VehiculoModel.create("AC456DD", "Toyota", "Corolla", "Sedan", 22000.0)
-        VehiculoModel.create("AE789FF", "VW", "Amarok", "Camioneta", 35000.0)
+        VehiculoModel.create("AA123BB", "Ford", "2018", "Fiesta", 15000.0)
+        VehiculoModel.create("AC456DD", "Toyota", "2024", "Corolla", 22000.0)
+        VehiculoModel.create("AE789FF", "VW", "2023", "Amarok", 35000.0)
         print("Datos de ejemplo creados.")
 
 
@@ -93,4 +93,4 @@ app.include_router(reportes_router)
 # --- RUN SERVER ---
 if __name__ == "__main__":
     setup_database()
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=False)
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

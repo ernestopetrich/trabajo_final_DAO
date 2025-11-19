@@ -135,3 +135,4 @@ class Alquiler:
             dias_alquiler = (fecha_fin - fecha_inicio).days + 1  # Incluir el día de inicio
             return dias_alquiler * precio_diario
         return 0
+    
