@@ -17,8 +17,13 @@ class AlquilerService:
     @staticmethod
     def devolver(id_alquiler):
         alquiler = Alquiler.get_by_id(id_alquiler)
-        print(alquiler)
-        if alquiler:
-            alquiler.update_estado("finalizado")
-            return alquiler
-        return None
+        if not alquiler:
+            return None
+
+        # Usar el método real que actualiza fecha_hora_fin_real
+        alquiler.devolver()
+
+        # Recargar desde la BD para obtener los datos actualizados
+        alquiler_actualizado = Alquiler.get_by_id(id_alquiler)
+
+        return alquiler_actualizado

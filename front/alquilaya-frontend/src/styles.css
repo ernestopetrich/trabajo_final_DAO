@@ -452,3 +452,20 @@ body {
 .hero-btn.secondary:hover {
   background: rgba(255,255,255,0.1);
 }
+
+.btn.primary:disabled {
+  background: var(--accent);   /* mantiene tu color */
+  opacity: 0.45;               /* lo apaga */
+  cursor: not-allowed;
+  filter: grayscale(40%);      /* lo pone gris */
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+.error-msg {
+  min-height: 18px;
+  font-size: 0.8rem;
+  color: #dc2626;
+  margin-top: -4px;
+  margin-bottom: 6px;
+}
+

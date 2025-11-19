@@ -16,7 +16,6 @@ class ClienteService:
 
     @staticmethod
     def get_all():
-        print("Error 2")
         return Cliente.get_all()
 
     @staticmethod

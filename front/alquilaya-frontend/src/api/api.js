@@ -5,6 +5,21 @@ const API = axios.create({
   headers: { "Content-Type": "application/json" }
 });
 
+// INTERCEPTOR para manejar errores
+API.interceptors.response.use(
+  response => response, 
+
+  error => {
+    // Error del backend con JSON { error: "mensaje" }
+    if (error.response && error.response.data) {
+      return Promise.resolve({ data: null, error: error.response.data.error });
+    }
+
+    // Error inesperado (servidor caído, red, etc.)
+    return Promise.resolve({ data: null, error: "Error de red o servidor." });
+  }
+);
+
 export function localToIso(datetimeLocalStr){
   if(!datetimeLocalStr) return null;
   const s = datetimeLocalStr.replace("T"," ");
@@ -25,7 +40,6 @@ export const getVehiculo = (id) => API.get(`/vehiculos/${id}`);
 export const createVehiculo = (payload) => API.post("/vehiculos/", payload);
 export const updateVehiculo = (id, payload) => API.put(`/vehiculos/${id}`, payload);
 export const deleteVehiculo = (id) => API.delete(`/vehiculos/${id}`);
-
 
 // Alquileres
 export const getAlquileres = () => API.get("/alquileres/");

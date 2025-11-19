@@ -18,16 +18,27 @@ export default function Alquileres(){
   useEffect(()=>{ load(); }, []);
 
   async function handleCreate(form){
-    // form.fecha_hora_inicio es datetime-local string "YYYY-MM-DDTHH:MM"
-    await createAlquiler({
-      id_cliente: Number(form.id_cliente),
-      id_vehiculo: Number(form.id_vehiculo),
-      id_empleado: Number(form.id_empleado || 1),
-      fecha_hora_inicio: localToIso(form.fecha_hora_inicio),
-      fecha_hora_fin_prevista: localToIso(form.fecha_hora_fin_prevista)
-    });
-    load();
+    try {
+      const res = await createAlquiler({
+        id_cliente: Number(form.id_cliente),
+        id_vehiculo: Number(form.id_vehiculo),
+        id_empleado: Number(form.id_empleado || 1),
+        fecha_hora_inicio: localToIso(form.fecha_hora_inicio),
+        fecha_hora_fin_prevista: localToIso(form.fecha_hora_fin_prevista)
+      });
+
+      if (res.error) {
+        alert(res.error);
+        return;
+      }
+
+      load();
+
+    } catch (err) {
+      alert("Error al crear alquiler: " + err.message);
+    }
   }
+
 
   async function handleDevolver(id){
     await devolverAlquiler(id);

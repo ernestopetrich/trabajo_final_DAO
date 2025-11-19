@@ -10,7 +10,6 @@ def create_cliente(data: ClienteCreate):
 
 @router.get("/", response_model=list[ClienteResponse])
 def get_clientes():
-    print("Hay error 1")
     return ClienteService.get_all()
 
 @router.get("/{id_cliente}", response_model=ClienteResponse)

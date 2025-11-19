@@ -47,6 +47,7 @@ app.add_middleware(
 # --- DATABASE INIT ---
 def setup_database():
     is_new_db = not os.path.exists(database.DATABASE_FILE)
+    print("USANDO BD:", os.path.abspath(database.DATABASE_FILE))
     database.create_tables()
 
     if is_new_db:
@@ -73,7 +74,6 @@ def root():
 
 
 # --- INCLUIR TODOS LOS ROUTERS ---
-setup_database()
 app.include_router(cliente_router)
 app.include_router(empleado_router)
 app.include_router(vehiculo_router)
@@ -87,4 +87,4 @@ app.include_router(factura_router)
 # --- RUN SERVER ---
 if __name__ == "__main__":
     setup_database()
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=False)

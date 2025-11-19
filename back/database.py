@@ -1,13 +1,14 @@
 import sqlite3
 import os
 
-DATABASE_FILE = "alquilaya.db"
+DATABASE_FILE = "C:\\Users\\ltrip\\Downloads\\trabajo_final_DAO\\alquilaya.db"
 
 def get_db_connection():
     """Crea y retorna una conexión a la base de datos SQLite."""
     conn = sqlite3.connect(DATABASE_FILE)
-    conn.row_factory = sqlite3.Row  # Para acceder a los resultados por nombre de columna
-    conn.execute("PRAGMA foreign_keys = ON;") # Habilitar llaves foráneas
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON;")
+    conn.execute("PRAGMA journal_mode=WAL;")
     return conn
 
 def create_tables():

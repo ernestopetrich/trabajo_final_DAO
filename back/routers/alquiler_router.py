@@ -49,14 +49,17 @@ def get_alquiler(id_alquiler: int):
 
 @router.post("/{id_alquiler}/devolver", response_model=AlquilerResponse)
 def devolver_alquiler(id_alquiler: int):
-    devuelto = AlquilerService.devolver(id_alquiler)
-    if not devuelto:
+    alq = AlquilerService.devolver(id_alquiler)
+
+    if not alq:
         raise HTTPException(400, "No se pudo devolver el alquiler")
-    else:
-        # Aquí podrías agregar lógica para actualizar la factura asociada al alquiler
-        factura = FacturaService.get_by_alquiler(id_alquiler)
-        if factura:
-            VehiculoService.update(devuelto.id_vehiculo, {"estado": "disponible"})
-            factura.estado_pago = "pagado"
-            FacturaService.update(factura.id_factura, {"estado_pago": "pagado"})
-    return devuelto
+
+    # Actualizar factura asociada
+    factura = FacturaService.get_by_alquiler(id_alquiler)
+    if factura:
+        FacturaService.update(factura.id_factura, {"estado_pago": "pagado"})
+
+    # Cambiar estado del vehículo
+    VehiculoService.update(alq.id_vehiculo, { "estado": "disponible" })
+
+    return alq

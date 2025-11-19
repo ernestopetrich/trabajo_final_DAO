@@ -1,5 +1,6 @@
 import sqlite3
 import database
+from datetime import datetime, timedelta
 
 class Alquiler:
     def __init__(self, id_alquiler, id_cliente, id_vehiculo, id_empleado, fecha_hora_inicio, 
@@ -20,8 +21,22 @@ class Alquiler:
     @staticmethod
     def create(id_cliente, id_vehiculo, id_empleado, fecha_hora_inicio, fecha_hora_fin_prevista):
         """Crea un nuevo alquiler y marca el vehículo como 'alquilado'."""
-        
-        # 1. Crear el registro de alquiler
+
+        # Convertir a datetime
+        inicio = datetime.fromisoformat(fecha_hora_inicio)
+        fin_prevista = datetime.fromisoformat(fecha_hora_fin_prevista)
+        ahora = datetime.now()
+
+        # 1) Validar que inicio sea >= ahora
+        if inicio < ahora:
+            print(" La fecha de inicio no puede ser menor a la fecha y hora actual.")
+            return None
+
+        # 2) Validar que fin prevista sea mínimo +1 hora
+        if fin_prevista < inicio + timedelta(hours=1):
+            print(" La fecha/hora fin prevista debe ser mínimo 1 hora después del inicio.")
+            return None
+        # 3) Crear alquiler y actualizar estado del vehículo
         conn = database.get_db_connection()
         cursor = conn.cursor()
         try:
@@ -31,17 +46,47 @@ class Alquiler:
             )
             id_alquiler = cursor.lastrowid
             
-            # 2. Actualizar estado del vehículo
             cursor.execute("UPDATE Vehiculos SET estado = 'alquilado' WHERE id_vehiculo = ?", (id_vehiculo,))
             
             conn.commit()
             return Alquiler.get_by_id(id_alquiler)
+        
         except sqlite3.Error as e:
             print(f"Error al crear alquiler: {e}")
             conn.rollback()
             return None
         finally:
             conn.close()
+
+    def devolver(self):
+        """Marca el vehículo como disponible y registra fecha y hora real de devolución."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        try:
+            fecha_fin_real = datetime.now().isoformat()
+
+            cursor.execute("""
+                UPDATE Alquileres 
+                SET fecha_hora_fin_real = ?, estado = 'finalizado'
+                WHERE id_alquiler = ?
+            """, (fecha_fin_real, self.id_alquiler))
+
+            cursor.execute("""
+                UPDATE Vehiculos 
+                SET estado = 'disponible'
+                WHERE id_vehiculo = ?
+            """, (self.id_vehiculo,))
+
+            conn.commit()
+            return True
+
+        except sqlite3.Error as e:
+            print("Error al devolver vehículo:", e)
+            conn.rollback()
+            return False
+        finally:
+            conn.close()
+
 
     @staticmethod
     def get_by_id(id_alquiler):
