@@ -45,6 +45,7 @@ app.add_middleware(
 )
 
 # --- DATABASE INIT ---
+
 def setup_database():
     is_new_db = not os.path.exists(database.DATABASE_FILE)
     print("USANDO BD:", os.path.abspath(database.DATABASE_FILE))

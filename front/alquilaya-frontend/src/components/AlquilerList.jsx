@@ -1,11 +1,20 @@
 import React from "react";
 
-export default function AlquilerList({items = [], onDevolver}){
+export default function AlquilerList({items = [], vehiculos = [], clientes = [], onDevolver}){
   // Convertir fecha ISO de la API en formato legible
   const format = (iso) => {
     if (!iso) return "—";
     const d = new Date(iso);
     return d.toLocaleString(); // Muestra fecha + hora según región
+  };
+  const getClienteNombre = (idCliente) => {
+    const cliente = clientes.find(c => c.id_cliente === idCliente);
+    return cliente ? `${cliente.nombre} ${cliente.apellido}` : "Sin cliente";
+  };
+
+  const getVehiculoNombre = (idVehiculo) => {
+    const vehiculo = vehiculos.find(v => v.id_vehiculo === idVehiculo);
+    return vehiculo ? `${vehiculo.marca} ${vehiculo.modelo}` : "Vehículo no encontrado";
   };
   return (
     <div className="card">
@@ -16,8 +25,8 @@ export default function AlquilerList({items = [], onDevolver}){
           {items.map(a => (
             <tr key={a.id_alquiler}>
               <td>{a.id_alquiler}</td>
-              <td>{a.id_cliente}</td>
-              <td>{a.id_vehiculo}</td>
+              <td>{getClienteNombre(a.id_cliente)}</td>
+              <td>{getVehiculoNombre(a.id_vehiculo)}</td>
               <td>{a.fecha_hora_inicio}</td>
               <td>{a.fecha_hora_fin_prevista}</td>
               <td>{format(a.fecha_hora_fin_real)}</td>

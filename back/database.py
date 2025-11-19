@@ -1,7 +1,7 @@
 import sqlite3
 import os
 
-DATABASE_FILE = "C:\\Users\\ltrip\\Downloads\\trabajo_final_DAO\\alquilaya.db"
+DATABASE_FILE = "alquilaya.db"
 
 def get_db_connection():
     """Crea y retorna una conexión a la base de datos SQLite."""

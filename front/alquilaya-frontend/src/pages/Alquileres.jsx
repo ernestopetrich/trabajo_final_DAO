@@ -49,7 +49,7 @@ export default function Alquileres(){
     <div className="page">
       <h2>Alquileres</h2>
       <AlquilerForm onSubmit={handleCreate} clientes={clientes} vehiculos={vehiculos}/>
-      <AlquilerList items={alquileres} onDevolver={handleDevolver}/>
+      <AlquilerList items={alquileres} vehiculos={vehiculos} clientes ={clientes} onDevolver={handleDevolver}/>
     </div>
   );
 }
