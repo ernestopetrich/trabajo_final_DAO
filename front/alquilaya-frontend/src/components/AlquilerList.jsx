@@ -1,6 +1,7 @@
+import { on } from "events";
 import React from "react";
 
-export default function AlquilerList({items = [], vehiculos = [], clientes = [], onDevolver}){
+export default function AlquilerList({items = [], vehiculos = [], clientes = [], onDevolver, onDelete}){
   // Convertir fecha ISO de la API en formato legible
   const format = (iso) => {
     if (!iso) return "—";
@@ -31,7 +32,40 @@ export default function AlquilerList({items = [], vehiculos = [], clientes = [],
               <td>{a.fecha_hora_fin_prevista}</td>
               <td>{format(a.fecha_hora_fin_real)}</td>
               <td>{a.estado}</td>
-              <td>{a.estado === 'activo' ? <button onClick={()=>onDevolver(a.id_alquiler)}>Devolver</button> : "-"}</td>
+              <td>
+                <div style={{display: 'flex', gap: '5px'}}>
+                  <button 
+                      disabled={a.estado === 'eliminado'} // <--- AQUÍ ESTÁ LA MAGIA
+                      style={{
+                          // Cambiamos el color a gris si está eliminado, si no azul
+                          backgroundColor: a.estado === 'eliminado' ? '#ccc' : '#1D4ED8', 
+                          color: 'white',
+                          cursor: a.estado === 'eliminado' ? 'not-allowed' : 'pointer'
+                      }}
+                      onClick={() => {onDevolver(a.id_alquiler)}}
+                  >
+                    Devolver
+                  </button>
+                  {/* Botón Eliminar: Se deshabilita si es 'eliminado' */}
+                  <button 
+                      disabled={a.estado === 'eliminado'} // <--- AQUÍ ESTÁ LA MAGIA
+                      style={{
+                          // Cambiamos el color a gris si está eliminado, si no rojo
+                          backgroundColor: a.estado === 'eliminado' ? '#ccc' : '#dc3545', 
+                          color: 'white',
+                          cursor: a.estado === 'eliminado' ? 'not-allowed' : 'pointer'
+                      }}
+                      onClick={() => {
+                          // Solo ejecuta si no está eliminado
+                          if(a.estado !== 'eliminado' && window.confirm('¿Estás seguro de eliminar este alquiler?')) {
+                              onDelete(a.id_alquiler);
+                          }
+                      }}
+                  >
+                      Eliminar
+                  </button>
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>

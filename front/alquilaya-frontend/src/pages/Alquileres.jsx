@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import AlquilerForm from "../components/AlquilerForm";
 import AlquilerList from "../components/AlquilerList";
-import { getAlquileres, createAlquiler, devolverAlquiler, getVehiculos, getClientes } from "../api/api";
+import { getAlquileres, createAlquiler, devolverAlquiler, getVehiculos, getClientes, deleteAlquiler } from "../api/api";
 import { localToIso } from "../api/api.js";
 
 export default function Alquileres(){
@@ -45,11 +45,16 @@ export default function Alquileres(){
     load();
   }
 
+  async function handleDelete(id){
+    await deleteAlquiler(id);
+    load();
+  }
+
   return (
     <div className="page">
       <h2>Alquileres</h2>
       <AlquilerForm onSubmit={handleCreate} clientes={clientes} vehiculos={vehiculos}/>
-      <AlquilerList items={alquileres} vehiculos={vehiculos} clientes ={clientes} onDevolver={handleDevolver}/>
+      <AlquilerList items={alquileres} vehiculos={vehiculos} clientes ={clientes} onDevolver={handleDevolver} onDelete={handleDelete}/>
     </div>
   );
 }
