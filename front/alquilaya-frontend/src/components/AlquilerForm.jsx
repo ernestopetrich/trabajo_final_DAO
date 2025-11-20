@@ -156,13 +156,11 @@ export default function AlquilerForm({ onSubmit, clientes = [], vehiculos = [] }
       <div className="error-msg">{errors.fin}</div>
 
       {/* Botón */}
-      <button
-        className="btn primary"
-        type="submit"
-        disabled={errors.inicio !== "" || errors.fin !== ""}
-      >
-        Crear Alquiler
-      </button>
+      <div style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
+        <button type="submit" style={{backgroundColor: '#10B981', flex: 1, color: 'white', border: 'none', padding: '10px', borderRadius: '5px', cursor: 'pointer'}}>
+          {"Crear Alquiler"}
+        </button>
+      </div>
     </form>
   );
 }

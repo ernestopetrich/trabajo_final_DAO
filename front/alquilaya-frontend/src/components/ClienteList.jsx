@@ -5,13 +5,14 @@ export default function ClienteList({items = [], onDelete}){
     <div className="card">
       <h3>Listado</h3>
       <table className="table">
-        <thead><tr><th>ID</th><th>Nombre</th><th>DNI</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>DNI</th><th>Nombre</th><th>Apellido</th><th>Email</th><th>Acciones</th><th>SAAAAS</th></tr></thead>
         <tbody>
           {items.map(c => (
             <tr key={c.id_cliente}>
-              <td>{c.id_cliente}</td>
-              <td>{c.nombre} {c.apellido}</td>
-              <td>{c.dni}</td>
+              <td style={{fontWeight: 'bold', fontFamily: 'monospace'}}>{c.dni}</td>
+              <td>{c.nombre}</td>
+              <td>{c.apellido}</td>
+              <td>{c.email}</td>
               <td><button onClick={()=>onDelete(c.id_cliente)}>Eliminar</button></td>
             </tr>
           ))}
