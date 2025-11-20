@@ -34,21 +34,29 @@ export default function AlquilerList({items = [], vehiculos = [], clientes = [],
               <td>{a.estado}</td>
               <td>
                 <div style={{display: 'flex', gap: '5px'}}>
-                  <button 
-                      disabled={a.estado === 'eliminado'} // <--- AQUÍ ESTÁ LA MAGIA
-                      style={{
-                          // Cambiamos el color a gris si está eliminado, si no azul
-                          backgroundColor: a.estado === 'eliminado' ? '#ccc' : '#1D4ED8', 
-                          color: 'white',
-                          cursor: a.estado === 'eliminado' ? 'not-allowed' : 'pointer'
-                      }}
-                      onClick={() => {onDevolver(a.id_alquiler)}}
-                  >
+                {/* Botón Devolver */}
+                <button 
+                    // 1. Lógica corregida: Se deshabilita si NO es 'activo'
+                    disabled={a.estado !== 'activo'}
+                    
+                    style={{
+                        // 2. Lógica de color: Azul (#1D4ED8) si es activo, Gris (#ccc) si no
+                        backgroundColor: a.estado === 'activo' ? '#1D4ED8' : '#ccc',
+                        color: 'white',
+                        
+                        // Cursor: Manito si es activo, Prohibido si no
+                        cursor: a.estado === 'activo' ? 'pointer' : 'not-allowed',
+                        
+                        // 3. IMPORTANTE: Aseguramos que no tenga bordes raros ni herencias
+                        border: 'none',
+                        padding: '5px 10px',
+                        borderRadius: '4px'
+                    }}>
                     Devolver
                   </button>
                   {/* Botón Eliminar: Se deshabilita si es 'eliminado' */}
                   <button 
-                      disabled={a.estado === 'eliminado'} // <--- AQUÍ ESTÁ LA MAGIA
+                      disabled={a.estado === 'eliminado'}
                       style={{
                           // Cambiamos el color a gris si está eliminado, si no rojo
                           backgroundColor: a.estado === 'eliminado' ? '#ccc' : '#dc3545', 

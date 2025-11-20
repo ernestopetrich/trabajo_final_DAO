@@ -14,7 +14,40 @@ export default function VehiculoList({items = [], onDelete}){
               <td>{v.marca} {v.modelo}</td>
               <td>{v.precio_diario}</td>
               <td>{v.estado}</td>
-              <td><button onClick={()=>onDelete(v.id_vehiculo)}>Eliminar</button></td>
+              <td>
+                <div style={{display: 'flex', gap: '5px'}}>
+                  <button 
+                      disabled={a.estado === 'eliminado'} // <--- AQUÍ ESTÁ LA MAGIA
+                      style={{
+                          // Cambiamos el color a gris si está eliminado, si no azul
+                          backgroundColor: a.estado === 'eliminado' ? '#ccc' : '#1D4ED8', 
+                          color: 'white',
+                          cursor: a.estado === 'eliminado' ? 'not-allowed' : 'pointer'
+                      }}
+                      onClick={() => {onDevolver(a.id_alquiler)}}
+                  >
+                    Devolver
+                  </button>
+                  {/* Botón Eliminar: Se deshabilita si es 'eliminado' */}
+                  <button 
+                      disabled={a.estado === 'eliminado'} // <--- AQUÍ ESTÁ LA MAGIA
+                      style={{
+                          // Cambiamos el color a gris si está eliminado, si no rojo
+                          backgroundColor: a.estado === 'eliminado' ? '#ccc' : '#dc3545', 
+                          color: 'white',
+                          cursor: a.estado === 'eliminado' ? 'not-allowed' : 'pointer'
+                      }}
+                      onClick={() => {
+                          // Solo ejecuta si no está eliminado
+                          if(a.estado !== 'eliminado' && window.confirm('¿Estás seguro de eliminar este alquiler?')) {
+                              onDelete(a.id_alquiler);
+                          }
+                      }}
+                  >
+                      Eliminar
+                  </button>
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>

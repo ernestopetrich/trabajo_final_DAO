@@ -20,3 +20,6 @@ __pycache__/
 .vscode/
 .idea/
 
+# --- Archivos Temporales de Bases de Datos SQLite ---
+.db-shm
+.db-wal
