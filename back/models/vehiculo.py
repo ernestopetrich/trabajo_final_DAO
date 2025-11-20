@@ -142,6 +142,20 @@ class Vehiculo:
             conn.close()
 
     @staticmethod
+    def update_estado(id_vehiculo, nuevo_estado):
+        conn = database.get_db_connection()
+        cur = conn.cursor()
+        try:
+            cur.execute("UPDATE Vehiculos SET estado = ? WHERE id_vehiculo=?", (nuevo_estado, id_vehiculo))
+            conn.commit()
+            return True
+        except:
+            conn.rollback()
+            return False
+        finally:
+            conn.close()
+
+    @staticmethod
     def delete(id_vehiculo):
         conn = database.get_db_connection()
         cur = conn.cursor()

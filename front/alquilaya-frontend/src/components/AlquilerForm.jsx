@@ -112,7 +112,7 @@ export default function AlquilerForm({ onSubmit, clientes = [], vehiculos = [] }
 
   return (
     <form className="card form" onSubmit={submit}>
-      
+      <h3>Nuevo Alquiler</h3>
       {/* Cliente */}
       <select name="id_cliente" value={form.id_cliente} onChange={change} required>
         <option value="">Cliente</option>
@@ -128,7 +128,7 @@ export default function AlquilerForm({ onSubmit, clientes = [], vehiculos = [] }
         <option value="">Vehículo</option>
         {vehiculos.map(v => (
           <option key={v.id_vehiculo} value={v.id_vehiculo}>
-            {v.patente} — {v.marca} {v.modelo}
+            {v.patente} — {v.marca} {v.nombre} {v.modelo}
           </option>
         ))}
       </select>

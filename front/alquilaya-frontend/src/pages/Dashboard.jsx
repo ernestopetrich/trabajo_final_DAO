@@ -97,7 +97,7 @@ export default function Dashboard() {
     // Mapear IDs a Nombres (Patente o Modelo)
     const labels2 = Object.keys(counts).map(id => {
       const v = vehiculos.find(veh => veh.id_vehiculo === parseInt(id));
-      return v ? `${v.marca} ${v.modelo} (${v.patente})` : `ID ${id}`;
+      return v ? `${v.marca} ${v.nombre} ${v.modelo} (${v.patente})` : `ID ${id}`;
     });
     const data2 = Object.values(counts);
 

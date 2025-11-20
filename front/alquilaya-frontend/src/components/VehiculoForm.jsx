@@ -1,7 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-// tipoPatente = "nueva" => AA 123 AA
-// tipoPatente = "vieja" => AAA 123
 const empty = {
   tipoPatente: "nueva",
   p1: "",
@@ -10,12 +8,58 @@ const empty = {
   marca: "",
   modelo: "",
   nombre: "",
-  precio_diario: ""
+  precio_diario: "",
+  estado: "disponible"
 };
 
-export default function VehiculoForm({ onSubmit }) {
+export default function VehiculoForm({ onSubmit, initialData = null, onCancel }) {
   const [form, setForm] = useState(empty);
   const [error, setError] = useState("");
+
+  // --- EFECTO: Cargar datos al editar ---
+  useEffect(() => {
+    if (initialData) {
+      // Intentamos detectar si es patente nueva o vieja para rellenar los inputs
+      const p = initialData.patente || "";
+      let parsedPatente = { tipoPatente: "nueva", p1: "", p2: "", p3: "" };
+
+      // Regex Patente Nueva (AA 123 BB)
+      const matchNueva = p.match(/^([A-Z]{2})([0-9]{3})([A-Z]{2})$/);
+      // Regex Patente Vieja (AAA 123)
+      const matchVieja = p.match(/^([A-Z]{3})([0-9]{3})$/);
+
+      if (matchNueva) {
+        parsedPatente = { 
+          tipoPatente: "nueva", 
+          p1: matchNueva[1], 
+          p2: matchNueva[2], 
+          p3: matchNueva[3] 
+        };
+      } else if (matchVieja) {
+        parsedPatente = { 
+          tipoPatente: "vieja", 
+          p1: matchVieja[1], 
+          p2: matchVieja[2], 
+          p3: "" 
+        };
+      } else {
+        // Si no matchea ninguna (ej: patente antigua o formato raro), 
+        // la ponemos toda en p1 para que no se pierda
+        parsedPatente = { tipoPatente: "vieja", p1: p, p2: "", p3: "" };
+      }
+
+      setForm({
+        ...initialData,
+        ...parsedPatente,
+        precio_diario: initialData.precio_diario.toString()
+      });
+    } else {
+      setForm(empty);
+    }
+    setError("");
+  }, [initialData]);
+
+  // --- MANEJADORES DE INPUTS ---
 
   const changeField = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -41,6 +85,8 @@ export default function VehiculoForm({ onSubmit }) {
     setError("");
   };
 
+  // --- VALIDACIÓN ---
+
   function validarYConstruirPatente() {
     const { tipoPatente, p1, p2, p3 } = form;
     const onlyLetters = /^[A-Za-z]+$/;
@@ -49,32 +95,32 @@ export default function VehiculoForm({ onSubmit }) {
     if (tipoPatente === "nueva") {
       // AA 123 AA
       if (p1.length !== 2 || !onlyLetters.test(p1)) {
-        return { ok: false, msg: "En patente nueva, el primer bloque debe ser 2 letras (AA)." };
+        return { ok: false, msg: "Patente nueva: 1° bloque debe ser 2 letras (AA)." };
       }
       if (p2.length !== 3 || !onlyDigits.test(p2)) {
-        return { ok: false, msg: "En patente nueva, el bloque central debe ser 3 números." };
+        return { ok: false, msg: "Patente nueva: 2° bloque debe ser 3 números." };
       }
       if (p3.length !== 2 || !onlyLetters.test(p3)) {
-        return { ok: false, msg: "En patente nueva, el último bloque debe ser 2 letras." };
+        return { ok: false, msg: "Patente nueva: 3° bloque debe ser 2 letras." };
       }
       return { ok: true, patente: `${p1}${p2}${p3}` };
     } else {
       // vieja: AAA 123
-      if (p1.length !== 3 || !onlyLetters.test(p1)) {
-        return { ok: false, msg: "En patente vieja, el primer bloque debe ser 3 letras (AAA)." };
-      }
-      if (p2.length !== 3 || !onlyDigits.test(p2)) {
-        return { ok: false, msg: "En patente vieja, el segundo bloque debe ser 3 números." };
+      // (Relajamos un poco la validación por si acaso estamos editando algo raro)
+      if (p1.length < 1) { 
+        return { ok: false, msg: "Patente vieja: falta la parte de letras." };
       }
       return { ok: true, patente: `${p1}${p2}` };
     }
   }
 
+  // --- SUBMIT ---
+
   const submit = async (e) => {
     e.preventDefault();
     setError("");
 
-    const { marca, modelo, nombre, precio_diario } = form;
+    const { marca, modelo, nombre, precio_diario, estado } = form;
 
     const res = validarYConstruirPatente();
     if (!res.ok) {
@@ -84,7 +130,7 @@ export default function VehiculoForm({ onSubmit }) {
 
     const precioNum = Number(precio_diario);
     if (!precio_diario || Number.isNaN(precioNum)) {
-      setError("El precio diario debe ser un número.");
+      setError("El precio diario debe ser un número válido.");
       return;
     }
 
@@ -93,103 +139,91 @@ export default function VehiculoForm({ onSubmit }) {
       marca,
       modelo,
       nombre,
-      precio_diario: precioNum
+      precio_diario: precioNum,
+      estado: estado || "disponible"
     };
 
     await onSubmit(payload);
-    setForm(empty);
+    
+    // Solo limpiamos si NO estamos editando (para crear otro seguido)
+    if (!initialData) setForm(empty);
   };
 
   return (
     <form className="card form" onSubmit={submit}>
-      {/* Tipo de patente */}
-      <label>Tipo de patente</label>
-      <select
-        name="tipoPatente"
-        value={form.tipoPatente}
-        onChange={changeTipoPatente}
-      >
-        <option value="nueva">Patente nueva (AA 123 AA)</option>
-        <option value="vieja">Patente vieja (AAA 123)</option>
-      </select>
+      <h3>{initialData ? "Editar Vehículo" : "Nuevo Vehículo"}</h3>
 
-      {/* Partes de la patente según tipo */}
-      {form.tipoPatente === "nueva" ? (
-        <>
-          <label>Patente nueva (AA 123 AA)</label>
-          <div className="row">
-            <input
-              placeholder="AA"
-              value={form.p1}
-              onChange={changeLetters("p1", 2)}
-            />
-            <input
-              placeholder="123"
-              value={form.p2}
-              onChange={changeDigits("p2", 3)}
-            />
-            <input
-              placeholder="AA"
-              value={form.p3}
-              onChange={changeLetters("p3", 2)}
-            />
-          </div>
-        </>
-      ) : (
-        <>
-          <label>Patente vieja (AAA 123)</label>
-          <div className="row">
-            <input
-              placeholder="AAA"
-              value={form.p1}
-              onChange={changeLetters("p1", 3)}
-            />
-            <input
-              placeholder="123"
-              value={form.p2}
-              onChange={changeDigits("p2", 3)}
-            />
-          </div>
-        </>
-      )}
+      {/* Selector de Tipo de Patente */}
+      <div style={{marginBottom: '10px'}}>
+        <label style={{display: 'block', marginBottom: '5px'}}>Formato de Patente</label>
+        <select
+            name="tipoPatente"
+            value={form.tipoPatente}
+            onChange={changeTipoPatente}
+            style={{padding: '5px', width: '100%'}}
+        >
+            <option value="nueva">Patente nueva (AA 123 AA)</option>
+            <option value="vieja">Patente vieja (AAA 123)</option>
+        </select>
+      </div>
+
+      {/* Inputs de Patente */}
+      <div style={{ display: "flex", gap: "10px", marginBottom: "15px" }}>
+        {form.tipoPatente === "nueva" ? (
+          <>
+            <input style={{flex: 1}} placeholder="AA" value={form.p1} onChange={changeLetters("p1", 2)} />
+            <input style={{flex: 2}} placeholder="123" value={form.p2} onChange={changeDigits("p2", 3)} />
+            <input style={{flex: 1}} placeholder="AA" value={form.p3} onChange={changeLetters("p3", 2)} />
+          </>
+        ) : (
+          <>
+            <input style={{flex: 1}} placeholder="AAA" value={form.p1} onChange={changeLetters("p1", 3)} />
+            <input style={{flex: 1}} placeholder="123" value={form.p2} onChange={changeDigits("p2", 3)} />
+          </>
+        )}
+      </div>
 
       {/* Resto de campos */}
-      <input
-        name="marca"
-        value={form.marca}
-        onChange={changeField}
-        placeholder="Marca"
-      />
-      <input
-        name="modelo"
-        value={form.modelo}
-        onChange={changeField}
-        placeholder="Modelo"
-      />
-      <input
-        name="nombre"
-        value={form.nombre}
-        onChange={changeField}
-        placeholder="Nombre"
-      />
-      <input
-        name="precio_diario"
-        value={form.precio_diario}
-        onChange={changeField}
-        placeholder="Precio diario (solo números)"
-        type="number"
-        step="any"
-      />
+      <div style={{display: 'grid', gap: '10px'}}>
+        <input name="marca" value={form.marca} onChange={changeField} placeholder="Marca (ej. Ford)" required />
+        <input name="modelo" value={form.modelo} onChange={changeField} placeholder="Modelo (ej. 2020)" required />
+        <input name="nombre" value={form.nombre} onChange={changeField} placeholder="Nombre (ej. Ranger)" />
+        
+        <div style={{display: 'flex', gap: '10px'}}>
+            <input 
+                name="precio_diario" 
+                value={form.precio_diario} 
+                onChange={changeField} 
+                placeholder="Precio diario" 
+                type="number" 
+                step="any" 
+                required 
+                style={{flex: 1}}
+            />
+            <select name="estado" value={form.estado} onChange={changeField} style={{flex: 1}}>
+                <option value="disponible">Disponible</option>
+                <option value="mantenimiento">Mantenimiento</option>
+            </select>
+        </div>
+      </div>
 
       {error && (
-        <p style={{ color: "red", fontSize: "0.8rem", marginTop: "4px" }}>
-          {error}
+        <p style={{ color: "red", fontSize: "0.9rem", marginTop: "10px" }}>
+          ⚠️ {error}
         </p>
       )}
 
-      <button className="btn primary" type="submit">
-        Crear Vehículo
-      </button>
+      <div style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
+        <button type="submit" style={{backgroundColor: initialData ? '#F59E0B' : '#10B981', flex: 1, color: 'white', border: 'none', padding: '10px', borderRadius: '5px', cursor: 'pointer'}}>
+          {initialData ? "Guardar Cambios" : "Crear Vehículo"}
+        </button>
+        
+        {onCancel && (
+            <button type="button" onClick={onCancel} style={{backgroundColor: '#6B7280', flex: 0.5, color: 'white', border: 'none', padding: '10px', borderRadius: '5px', cursor: 'pointer'}}>
+                Cancelar
+            </button>
+        )}
+      </div>
     </form>
   );
 }

@@ -20,7 +20,7 @@ class VehiculoService:
 
     @staticmethod
     def delete(id_vehiculo):
-        return Vehiculo.delete(id_vehiculo)
+        return Vehiculo.update_estado(id_vehiculo, "eliminado")
 
     @staticmethod
     def is_available(id_vehiculo, fecha_inicio, fecha_fin):
