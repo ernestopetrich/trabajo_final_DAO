@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 
+const years = Array.from({ length: 2025 - 1980 + 1 }, (_, i) => 1980 + i);
+
 const empty = {
   tipoPatente: "nueva",
   p1: "",
@@ -186,7 +188,12 @@ export default function VehiculoForm({ onSubmit, initialData = null, onCancel })
       {/* Resto de campos */}
       <div style={{display: 'grid', gap: '10px'}}>
         <input name="marca" value={form.marca} onChange={changeField} placeholder="Marca (ej. Ford)" required />
-        <input name="modelo" value={form.modelo} onChange={changeField} placeholder="Modelo (ej. 2020)" required />
+        <select name="modelo" value={form.modelo} onChange={changeField} required style={{ padding: '5px' }} >
+            <option value="">Modelo</option>
+            {years.map(y => (
+                <option key={y} value={y}>{y}</option>
+            ))}
+        </select>
         <input name="nombre" value={form.nombre} onChange={changeField} placeholder="Nombre (ej. Ranger)" />
         
         <div style={{display: 'flex', gap: '10px'}}>

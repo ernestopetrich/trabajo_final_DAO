@@ -21,6 +21,24 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
     try { return new Date(iso).toLocaleString(); } catch (e) { return iso; }
   };
 
+  const calcularDiasCobrados = (inicioISO, finPrevistaISO) => {
+    if (!inicioISO || !finPrevistaISO) return 0;
+
+    const inicio = new Date(inicioISO);
+    const fin = new Date(finPrevistaISO);
+
+    const diffMs = fin - inicio;
+    const diffHoras = diffMs / 1000 / 3600;
+
+    // Regla: cada periodo de 24h incrementa un día
+    return Math.ceil(diffHoras / 24);
+};
+
+  const getPrecioVehiculo = (id) => {
+    const v = vehiculos.find(x => x.id_vehiculo === id);
+    return v ? Number(v.precio_diario || 0) : 0;
+};
+
   const getClienteNombre = (id) => {
     const c = clientes.find(x => x.id_cliente === id);
     return c ? `${c.nombre} ${c.apellido}` : "Desconocido";
@@ -52,11 +70,19 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
 
   // --- Procesamiento Principal ---
   const processedItems = useMemo(() => {
-    let data = items.map(item => ({
-      ...item,
-      clienteNombre: getClienteNombre(item.id_cliente),
-      vehiculoNombre: getVehiculoNombre(item.id_vehiculo)
-    }));
+    let data = items.map(item => {
+      const precioDiario = getPrecioVehiculo(item.id_vehiculo);
+      const dias = calcularDiasCobrados(item.fecha_hora_inicio, item.fecha_hora_fin_prevista); 
+      const precioTotal = precioDiario * dias;
+
+      return {
+          ...item,
+          clienteNombre: getClienteNombre(item.id_cliente),
+          vehiculoNombre: getVehiculoNombre(item.id_vehiculo),
+          diasCobrados: dias,
+          precioTotal
+      };
+    });
 
     // A. FILTROS DE ESTADO
     data = data.filter(i => {
@@ -206,7 +232,8 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
                     <th onClick={()=>requestSort('id_alquiler')} style={{cursor:'pointer'}}>ID {getClassNamesFor('id_alquiler') === 'asc' ? '▲' : '▼'}</th>
                     <th onClick={()=>requestSort('clienteNombre')} style={{cursor:'pointer'}}>Cliente</th>
                     <th onClick={()=>requestSort('vehiculoNombre')} style={{cursor:'pointer'}}>Vehículo</th>
-                    <th>Fechas</th>                    
+                    <th>Fechas</th>
+                    <th>Precio</th>                    
                     <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
@@ -221,6 +248,12 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
                             <div>Inicio: {format(a.fecha_hora_inicio)}</div>
                             <div style={{color: '#666'}}>Fin previsto: {format(a.fecha_hora_fin_prevista)}</div>
                             <div style={{color: '#666'}}>Fin real: {format(a.fecha_hora_fin_real)}</div>
+                        </td>
+                        <td>
+                            ${a.precioTotal.toLocaleString("es-AR")}
+                            <div style={{fontSize:'0.75rem', color:'#666'}}>
+                                ({a.diasCobrados} día/s)
+                            </div>
                         </td>
                         <td>
                             <span style={{
