@@ -52,3 +52,15 @@ class Multa:
         rows = cursor.fetchall()
         conn.close()
         return [Multa(*row) for row in rows]
+    
+    @staticmethod
+    def get_by_id(id_multa):
+        """Obtiene una multa por su ID."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Multas WHERE id_multa = ?", (id_multa,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return Multa(*row)
+        return None

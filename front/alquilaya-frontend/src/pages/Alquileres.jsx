@@ -1,6 +1,8 @@
 import React, {useEffect, useState} from "react";
 import AlquilerForm from "../components/AlquilerForm";
 import AlquilerList from "../components/AlquilerList";
+import DevolucionWizard from "../components/DevolucionWizard"; // <--- 1. Importamos el Wizard
+
 // Agregamos getEmpleados a los imports
 import { getAlquileres, createAlquiler, deleteAlquiler, getVehiculos, getClientes, getEmpleados, updateAlquiler, devolverAlquiler } from "../api/api";
 
@@ -8,9 +10,12 @@ export default function Alquileres(){
   const [alquileres, setAlquileres] = useState([]);
   const [vehiculos, setVehiculos] = useState([]);
   const [clientes, setClientes] = useState([]);
-  const [empleados, setEmpleados] = useState([]); // Nuevo estado
+  const [empleados, setEmpleados] = useState([]); 
   
   const [editingAlquiler, setEditingAlquiler] = useState(null);
+
+  // <--- 2. Estado para controlar el Wizard (si no es null, se muestra)
+  const [returningAlquilerId, setReturningAlquilerId] = useState(null);
 
   async function load(){
     // Cargamos todo en paralelo, incluyendo empleados
@@ -56,17 +61,22 @@ export default function Alquileres(){
     load();
   }
 
-  async function handleDevolver(id){
-  // marcar como finalizado
-  await devolverAlquiler(id
-    //, {
-    //estado: 'finalizado'
-    //fecha_hora_fin_real: new Date().toISOString()
-//  }
-);
-  load(); // recargar la lista
-}
+  // <--- 3. Lógica del Wizard ---
+  
+  // Esta función se activa al tocar "Devolver" en la lista
+  function iniciarDevolucion(id){
+    setReturningAlquilerId(id); // Abre el wizard guardando el ID
+  }
 
+  // Esta función se ejecuta cuando el Wizard termina de guardar daños/multas
+  async function finalizarDevolucion(){
+    if (returningAlquilerId) {
+        // Marcamos como finalizado en el backend
+        await devolverAlquiler(returningAlquilerId); 
+        setReturningAlquilerId(null); // Cerramos el wizard
+        load(); // Recargamos la lista
+    }
+  }
 
   return (
     <div className="page">
@@ -77,7 +87,7 @@ export default function Alquileres(){
         onSubmit={handleCreate} 
         clientes={clientes} 
         vehiculos={vehiculos}
-        empleados={empleados} // Pasamos la lista de empleados
+        empleados={empleados} 
       />
       
       <hr/>
@@ -90,15 +100,22 @@ export default function Alquileres(){
                     initialData={editingAlquiler}
                     clientes={clientes}
                     vehiculos={vehiculos}
-                    empleados={empleados} // Pasamos empleados también al modal
+                    empleados={empleados}
                     onSubmit={handleUpdate}
                     onCancel={() => setEditingAlquiler(null)}
                 />
             </div>
-            <hr/>
         </div>
       )}
 
+      {/* <--- 4. Renderizado del Wizard --- */}
+      {returningAlquilerId && (
+        <DevolucionWizard 
+            alquilerId={returningAlquilerId}
+            onFinish={finalizarDevolucion}
+            onCancel={() => setReturningAlquilerId(null)}
+        />
+      )}
 
       {/* Lista */}
       <AlquilerList 
@@ -106,7 +123,7 @@ export default function Alquileres(){
         vehiculos={vehiculos}
         clientes={clientes}
         onStateChange={handleStateChange}
-        onDevolver={handleDevolver}
+        onDevolver={iniciarDevolucion} // <--- Pasamos iniciarDevolucion en vez de handleDevolver directo
         onDelete={handleDelete}
         onEdit={setEditingAlquiler}
       />

@@ -1,6 +1,7 @@
 import sqlite3
 import database
 from datetime import datetime, timedelta
+from math import ceil 
 # Importamos todas las clases de estado
 from models.state_alquiler import (
     EstadoPendiente, 
@@ -92,6 +93,73 @@ class Alquiler:
         cursor.execute("UPDATE Alquileres SET fecha_hora_fin_real = ? WHERE id_alquiler = ?", (fecha_iso, self.id_alquiler))
         conn.commit()
         conn.close()
+
+    # --- CÁLCULO DE COSTOS (ACTUALIZADO CON MULTAS Y DAÑOS) ---
+    def calcular_y_guardar_costo(self):
+        """
+        Calcula el costo total: (Días * Precio) + Multas + Daños.
+        Se llama automáticamente desde el Estado al finalizar.
+        """
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        
+        # 1. Obtener precio diario del vehículo
+        cursor.execute("SELECT precio_diario FROM Vehiculos WHERE id_vehiculo = ?", (self.id_vehiculo,))
+        row = cursor.fetchone()
+        
+        if not row:
+            conn.close()
+            print("Error: No se encontró el vehículo para calcular costo.")
+            return 0.0
+
+        precio_diario = row['precio_diario']
+        
+        # 2. Calcular duración y costo base
+        inicio = datetime.fromisoformat(self.fecha_hora_inicio)
+        
+        if self.fecha_hora_fin_real:
+            fin = datetime.fromisoformat(self.fecha_hora_fin_real)
+        else:
+            fin = datetime.now() 
+        
+        diferencia = fin - inicio
+        dias_a_cobrar = ceil(diferencia.total_seconds() / 86400) 
+        
+        if dias_a_cobrar < 1:
+            dias_a_cobrar = 1
+            
+        costo_base = dias_a_cobrar * precio_diario
+        
+        # 3. Sumar Multas
+        # Usamos SUM(monto) para obtener el total de todas las multas de este alquiler
+        cursor.execute("SELECT SUM(monto) FROM Multas WHERE id_alquiler = ?", (self.id_alquiler,))
+        resultado_multas = cursor.fetchone()[0]
+        total_multas = resultado_multas if resultado_multas else 0.0
+
+        # 4. Sumar Daños
+        # Usamos SUM(costo_reparacion) para obtener el total de reparaciones
+        cursor.execute("SELECT SUM(costo_reparacion) FROM Danios WHERE id_alquiler = ?", (self.id_alquiler,))
+        resultado_danios = cursor.fetchone()[0]
+        total_danios = resultado_danios if resultado_danios else 0.0
+
+        # 5. Calcular Total Final
+        monto_total = costo_base + total_multas + total_danios
+        
+        # 6. Actualizar objeto y BD
+        self.costo_total = monto_total
+        cursor.execute("UPDATE Alquileres SET costo_total = ? WHERE id_alquiler = ?", (monto_total, self.id_alquiler))
+        conn.commit()
+        conn.close()
+        
+        # Log detallado para control
+        print(f"--- Cierre de Alquiler #{self.id_alquiler} ---")
+        print(f"Costo Base ({dias_a_cobrar} días): ${costo_base}")
+        print(f"Multas: ${total_multas}")
+        print(f"Daños: ${total_danios}")
+        print(f"TOTAL FINAL: ${monto_total}")
+        
+        return monto_total
+
 
     # --- MÉTODOS ESTÁTICOS (CRUD) ---
     @staticmethod

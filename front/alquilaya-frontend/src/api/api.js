@@ -51,4 +51,8 @@ export const updateAlquiler = (id, payload) => API.put(`/alquileres/${id}`, payl
 // Empleados
 export const getEmpleados = () => API.get("/empleados/");
 
+// Incidentes
+export const createDanio = (payload) => API.post("/danios/", payload);
+export const createMulta = (payload) => API.post("/multas/", payload);
+
 
