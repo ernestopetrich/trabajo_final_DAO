@@ -1,6 +1,7 @@
 import sqlite3
 import database
 from datetime import datetime, timedelta
+from models.state_alquiler import EstadoActivo, EstadoFinalizado
 
 class Alquiler:
     def __init__(self, id_alquiler, id_cliente, id_vehiculo, id_empleado, fecha_hora_inicio, 
@@ -14,9 +15,37 @@ class Alquiler:
         self.fecha_hora_fin_real = fecha_hora_fin_real
         self.costo_total = costo_total
         self.estado = estado
+        self.state = self._crear_estado(self.estado)
 
     def __repr__(self):
         return f"<Alquiler #{self.id_alquiler} (Veh: {self.id_vehiculo}) - {self.estado}>"
+    
+    def _crear_estado(self, estado):
+        if estado == "activo":
+            return EstadoActivo()
+        elif estado == "finalizado":
+            return EstadoFinalizado()
+        else:
+            return EstadoActivo()
+        
+    def set_estado(self, nuevo_estado):
+        self.estado = nuevo_estado
+        self.state = self._crear_estado(nuevo_estado)
+
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE Alquileres SET estado = ? WHERE id_alquiler = ?", (nuevo_estado, self.id_alquiler))
+        conn.commit()
+        conn.close()
+
+    def set_fecha_fin_real(self, fecha_iso):
+        self.fecha_hora_fin_real = fecha_iso
+
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE Alquileres SET fecha_hora_fin_real = ? WHERE id_alquiler = ?", (fecha_iso, self.id_alquiler))
+        conn.commit()
+        conn.close()
 
     @staticmethod
     def create(id_cliente, id_vehiculo, id_empleado, fecha_hora_inicio, fecha_hora_fin_prevista):
@@ -58,34 +87,8 @@ class Alquiler:
         finally:
             conn.close()
 
-    def devolver(self):
-        """Marca el vehículo como disponible y registra fecha y hora real de devolución."""
-        conn = database.get_db_connection()
-        cursor = conn.cursor()
-        try:
-            fecha_fin_real = datetime.now().isoformat()
-
-            cursor.execute("""
-                UPDATE Alquileres 
-                SET fecha_hora_fin_real = ?, estado = 'finalizado'
-                WHERE id_alquiler = ?
-            """, (fecha_fin_real, self.id_alquiler))
-
-            cursor.execute("""
-                UPDATE Vehiculos 
-                SET estado = 'disponible'
-                WHERE id_vehiculo = ?
-            """, (self.id_vehiculo,))
-
-            conn.commit()
-            return True
-
-        except sqlite3.Error as e:
-            print("Error al devolver vehículo:", e)
-            conn.rollback()
-            return False
-        finally:
-            conn.close()
+        def devolver(self):
+            return self.state.devolver(self)
 
 
     @staticmethod
