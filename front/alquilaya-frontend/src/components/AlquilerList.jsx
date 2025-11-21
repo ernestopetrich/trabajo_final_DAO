@@ -115,7 +115,7 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
 
         {/* Activo -> Devolver */}
         {s === 'activo' && (
-            <button style={{...btnBase, backgroundColor: '#1D4ED8'}} onClick={() => onDevolver(id)} title="Recibir Vehículo">
+            <button style={{...btnBase, backgroundColor: '#1D4ED8'}} onClick={() => onDevolver(id)} title="Devolver Vehículo">
                 Devolver
             </button>
         )}
@@ -219,7 +219,8 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
                         <td>{a.vehiculoNombre}</td>
                         <td style={{fontSize: '0.9rem'}}>
                             <div>Inicio: {format(a.fecha_hora_inicio)}</div>
-                            <div style={{color: '#666'}}>Fin: {format(a.fecha_hora_fin_prevista)}</div>
+                            <div style={{color: '#666'}}>Fin previsto: {format(a.fecha_hora_fin_prevista)}</div>
+                            <div style={{color: '#666'}}>Fin real: {format(a.fecha_hora_fin_real)}</div>
                         </td>
                         <td>
                             <span style={{

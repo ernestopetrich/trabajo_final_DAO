@@ -20,11 +20,9 @@ class AlquilerService:
         alquiler = Alquiler.get_by_id(id_alquiler)
         if not alquiler:
             return None
-
-        # Usar el método real que actualiza fecha_hora_fin_real
+        
         alquiler.devolver()
 
-        # Recargar desde la BD para obtener los datos actualizados
         alquiler_actualizado = Alquiler.get_by_id(id_alquiler)
 
         return alquiler_actualizado
@@ -38,3 +36,8 @@ class AlquilerService:
         vehiculo = alquiler.id_vehiculo
         VehiculoService.update(vehiculo, {"estado": "disponible"})
         return rtn
+    
+    @staticmethod
+    def update(id_alquiler, data):
+        return Alquiler.update(id_alquiler, **data)
+

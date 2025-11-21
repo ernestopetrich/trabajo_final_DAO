@@ -119,6 +119,35 @@ class Alquiler:
         conn.commit()
         conn.close()
 
+    @staticmethod
+    def update(id_alquiler, **fields):
+        """Actualiza cualquier campo del alquiler."""
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+
+        # Filtrar campos válidos (evita columnas inexistentes)
+        valid_fields = {k: v for k, v in fields.items() if v is not None}
+
+        if not valid_fields:
+            conn.close()
+            return Alquiler.get_by_id(id_alquiler)
+
+        query_fields = [f"{k}=?" for k in valid_fields.keys()]
+        params = list(valid_fields.values())
+        params.append(id_alquiler)
+
+        try:
+            cursor.execute(
+                f"UPDATE Alquileres SET {', '.join(query_fields)} WHERE id_alquiler=?",
+                params
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+        return Alquiler.get_by_id(id_alquiler)
+
+
 
     def calcular_monto(self):
         """Calcula el monto total del alquiler basado en la duración y el precio diario del vehículo."""

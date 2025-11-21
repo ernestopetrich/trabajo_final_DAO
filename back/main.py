@@ -64,6 +64,9 @@ def setup_database():
 
         # Crear empleado de ejemplo
         EmpleadoModel.create("DNI", "28999111", "Carlos", "Lopez")
+        EmpleadoModel.create("DNI", "27555333", "Lucia", "Martinez")
+        EmpleadoModel.create("DNI", "30444777", "Federico", "Ruiz")
+        EmpleadoModel.create("DNI", "26322111", "Valentina", "Sosa")
 
         # Crear vehículos de ejemplo
         VehiculoModel.create("AA123BB", "Ford", "2018", "Fiesta", 15000.0)

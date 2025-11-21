@@ -17,14 +17,14 @@ class Cliente:
         return f"<Cliente {self.nombre} {self.apellido} (DNI: {self.dni})>"
 
     @staticmethod
-    def create(tipo_dni, dni, nombre, apellido, telefono, email, direccion):
+    def create(tipo_dni, dni, nombre, apellido, telefono, email, direccion, estado="activo"):
         """Crea un nuevo cliente en la BD."""
         conn = database.get_db_connection()
         cursor = conn.cursor()
         try:
             cursor.execute(
-                "INSERT INTO Clientes (tipo_dni, dni, nombre, apellido, telefono, email, direccion) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (tipo_dni, dni, nombre, apellido, telefono, email, direccion)
+                "INSERT INTO Clientes (tipo_dni, dni, nombre, apellido, telefono, email, direccion, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (tipo_dni, dni, nombre, apellido, telefono, email, direccion, estado)
             )
             conn.commit()
             return Cliente.get_by_id(cursor.lastrowid)

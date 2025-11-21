@@ -56,6 +56,16 @@ export default function Alquileres(){
     load();
   }
 
+  async function handleDevolver(id){
+  // marcar como finalizado
+  await updateAlquiler(id, {
+    estado: 'finalizado',
+    fecha_hora_fin_real: new Date().toISOString()
+  });
+  load(); // recargar la lista
+}
+
+
   return (
     <div className="page">
       <h2>Gestión de Alquileres</h2>
@@ -94,7 +104,7 @@ export default function Alquileres(){
         vehiculos={vehiculos}
         clientes={clientes}
         onStateChange={handleStateChange}
-        
+        onDevolver={handleDevolver}
         onDelete={handleDelete}
         onEdit={setEditingAlquiler}
       />

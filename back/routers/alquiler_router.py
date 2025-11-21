@@ -70,3 +70,10 @@ def delete_alquiler(id_alquiler: int):
     if not success:
         raise HTTPException(404, "Alquiler no encontrado o no se pudo dar de baja")
     return {"detail": "Alquiler {id_alquiler} dado de baja exitosamente"}
+
+@router.put("/{id_alquiler}", response_model=AlquilerResponse)
+def update_alquiler(id_alquiler: int, data: dict):
+    actualizado = AlquilerService.update(id_alquiler, data)
+    if not actualizado:
+        raise HTTPException(400, "No se pudo actualizar el alquiler")
+    return actualizado
