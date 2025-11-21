@@ -2,7 +2,7 @@ import sqlite3
 import database
 
 class Cliente:
-    def __init__(self, id_cliente, tipo_dni, dni, nombre, apellido, telefono, email, direccion):
+    def __init__(self, id_cliente, tipo_dni, dni, nombre, apellido, telefono, email, direccion, estado):
         self.id_cliente = id_cliente
         self.tipo_dni = tipo_dni
         self.dni = dni
@@ -11,6 +11,7 @@ class Cliente:
         self.telefono = telefono
         self.email = email
         self.direccion = direccion
+        self.estado = estado
 
     def __repr__(self):
         return f"<Cliente {self.nombre} {self.apellido} (DNI: {self.dni})>"
@@ -90,16 +91,3 @@ class Cliente:
         finally:
             conn.close()
 
-    @staticmethod
-    def delete(id_cliente):
-        conn = database.get_db_connection()
-        cursor = conn.cursor()
-        try:
-            cursor.execute("DELETE FROM Clientes WHERE id_cliente=?", (id_cliente,))
-            conn.commit()
-            return cursor.rowcount > 0
-        except:
-            conn.rollback()
-            return False
-        finally:
-            conn.close()

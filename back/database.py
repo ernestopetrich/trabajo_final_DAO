@@ -28,7 +28,8 @@ def create_tables():
         apellido TEXT NOT NULL,
         telefono TEXT,
         email TEXT UNIQUE,
-        direccion TEXT
+        direccion TEXT,
+        estado TEXT NOT NULL DEFAULT 'activo'
     );
     """)
 

@@ -26,9 +26,9 @@ def update_cliente(id_cliente: int, data: ClienteUpdate):
         raise HTTPException(400, "Error al actualizar cliente")
     return actualizado
 
-@router.delete("/{id_cliente}")
+@router.put("/{id_cliente}/delete")
 def delete_cliente(id_cliente: int):
     eliminado = ClienteService.delete(id_cliente)
     if not eliminado:
-        raise HTTPException(400, "Error al eliminar cliente")
-    return {"detail": "Cliente eliminado"}
+        raise HTTPException(400, "Error al dar de baja el cliente")
+    return {"detail": "Cliente dado de baja exitosamente"}

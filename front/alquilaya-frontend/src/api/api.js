@@ -32,7 +32,7 @@ export const getClientes = () => API.get("/clientes/");
 export const getCliente = (id) => API.get(`/clientes/${id}`);
 export const createCliente = (payload) => API.post("/clientes/", payload);
 export const updateCliente = (id, payload) => API.put(`/clientes/${id}`, payload);
-export const deleteCliente = (id) => API.delete(`/clientes/${id}`);
+export const deleteCliente = (id) => API.put(`/clientes/${id}/delete`);
 
 // Vehículos
 export const getVehiculos = () => API.get("/vehiculos/");
@@ -46,3 +46,9 @@ export const getAlquileres = () => API.get("/alquileres/");
 export const createAlquiler = (payload) => API.post("/alquileres/", payload);
 export const devolverAlquiler = (id) => API.post(`/alquileres/${id}/devolver`);
 export const deleteAlquiler = (id) => API.post(`/alquileres/${id}/delete`);
+export const updateAlquiler = (id, payload) => API.put(`/alquileres/${id}`, payload);
+
+// Empleados
+export const getEmpleados = () => API.get("/empleados/");
+
+

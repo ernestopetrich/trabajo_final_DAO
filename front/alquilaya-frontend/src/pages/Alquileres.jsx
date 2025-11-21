@@ -1,50 +1,56 @@
 import React, {useEffect, useState} from "react";
 import AlquilerForm from "../components/AlquilerForm";
 import AlquilerList from "../components/AlquilerList";
-import { getAlquileres, createAlquiler, devolverAlquiler, getVehiculos, getClientes, deleteAlquiler } from "../api/api";
-import { localToIso } from "../api/api.js";
+// Agregamos getEmpleados a los imports
+import { getAlquileres, createAlquiler, deleteAlquiler, getVehiculos, getClientes, getEmpleados, updateAlquiler } from "../api/api";
 
 export default function Alquileres(){
   const [alquileres, setAlquileres] = useState([]);
   const [vehiculos, setVehiculos] = useState([]);
   const [clientes, setClientes] = useState([]);
+  const [empleados, setEmpleados] = useState([]); // Nuevo estado
+  
+  const [editingAlquiler, setEditingAlquiler] = useState(null);
 
   async function load(){
-    const a = await getAlquileres(); setAlquileres(a.data || []);
-    const v = await getVehiculos(); setVehiculos(v.data || []);
-    const c = await getClientes(); setClientes(c.data || []);
+    // Cargamos todo en paralelo, incluyendo empleados
+    const [a, v, c, e] = await Promise.all([
+        getAlquileres(), 
+        getVehiculos(), 
+        getClientes(),
+        getEmpleados()
+    ]);
+    setAlquileres(a.data || []);
+    setVehiculos(v.data || []);
+    setClientes(c.data || []);
+    setEmpleados(e.data || []);
   }
 
   useEffect(()=>{ load(); }, []);
 
+  // CREAR
   async function handleCreate(form){
-    try {
-      const res = await createAlquiler({
-        id_cliente: Number(form.id_cliente),
-        id_vehiculo: Number(form.id_vehiculo),
-        id_empleado: Number(form.id_empleado || 1),
-        fecha_hora_inicio: localToIso(form.fecha_hora_inicio),
-        fecha_hora_fin_prevista: localToIso(form.fecha_hora_fin_prevista)
-      });
-
-      if (res.error) {
-        alert(res.error);
-        return;
-      }
-
-      load();
-
-    } catch (err) {
-      alert("Error al crear alquiler: " + err.message);
-    }
-  }
-
-
-  async function handleDevolver(id){
-    await devolverAlquiler(id);
+    await createAlquiler({
+        ...form,
+        estado: 'pendiente' 
+    });
     load();
   }
 
+  // CAMBIAR ESTADO
+  async function handleStateChange(id, nuevoEstado){
+    await updateAlquiler(id, { estado: nuevoEstado });
+    load();
+  }
+
+  // EDITAR
+  async function handleUpdate(formData){
+    await updateAlquiler(editingAlquiler.id_alquiler, formData);
+    setEditingAlquiler(null);
+    load();
+  }
+
+  // ELIMINAR
   async function handleDelete(id){
     await deleteAlquiler(id);
     load();
@@ -52,9 +58,46 @@ export default function Alquileres(){
 
   return (
     <div className="page">
-      <h2>Alquileres</h2>
-      <AlquilerForm onSubmit={handleCreate} clientes={clientes} vehiculos={vehiculos}/>
-      <AlquilerList items={alquileres} vehiculos={vehiculos} clientes ={clientes} onDevolver={handleDevolver} onDelete={handleDelete}/>
+      <h2>Gestión de Alquileres</h2>
+      
+      {/* Formulario de Creación */}
+      <AlquilerForm 
+        onSubmit={handleCreate} 
+        clientes={clientes} 
+        vehiculos={vehiculos}
+        empleados={empleados} // Pasamos la lista de empleados
+      />
+      
+      <hr/>
+
+      {/* Modal de Edición */}
+      {editingAlquiler && (
+        <div className="modal-overlay">
+            <div className="modal-content">
+                <AlquilerForm 
+                    initialData={editingAlquiler}
+                    clientes={clientes}
+                    vehiculos={vehiculos}
+                    empleados={empleados} // Pasamos empleados también al modal
+                    onSubmit={handleUpdate}
+                    onCancel={() => setEditingAlquiler(null)}
+                />
+            </div>
+            <hr/>
+        </div>
+      )}
+
+
+      {/* Lista */}
+      <AlquilerList 
+        items={alquileres}
+        vehiculos={vehiculos}
+        clientes={clientes}
+        onStateChange={handleStateChange}
+        
+        onDelete={handleDelete}
+        onEdit={setEditingAlquiler}
+      />
     </div>
   );
 }

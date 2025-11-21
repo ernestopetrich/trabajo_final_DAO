@@ -1,19 +1,41 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-export default function AlquilerForm({ onSubmit, clientes = [], vehiculos = [] }) {
+export default function AlquilerForm({ onSubmit, clientes = [], vehiculos = [], empleados = [], initialData = null, onCancel }) {
 
-  const [form, setForm] = useState({
+  const emptyState = {
     id_cliente: "",
     id_vehiculo: "",
-    id_empleado: "1",
+    id_empleado: "", // Ahora empieza vacío para obligar a seleccionar
     fecha_hora_inicio: "",
     fecha_hora_fin_prevista: ""
-  });
+  };
+
+  const [form, setForm] = useState(emptyState);
 
   const [errors, setErrors] = useState({
     inicio: "",
     fin: ""
   });
+
+  // --- EFECTO: Cargar datos si estamos editando ---
+  useEffect(() => {
+    if (initialData) {
+      // Función auxiliar para cortar la fecha ISO (YYYY-MM-DDTHH:MM:SS) a lo que pide el input (YYYY-MM-DDTHH:MM)
+      const formatForInput = (isoStr) => isoStr ? isoStr.substring(0, 16) : "";
+
+      setForm({
+        ...initialData,
+        id_cliente: initialData.id_cliente || "",
+        id_vehiculo: initialData.id_vehiculo || "",
+        id_empleado: initialData.id_empleado || "",
+        fecha_hora_inicio: formatForInput(initialData.fecha_hora_inicio),
+        fecha_hora_fin_prevista: formatForInput(initialData.fecha_hora_fin_prevista)
+      });
+    } else {
+      setForm(emptyState);
+    }
+  }, [initialData]);
+
 
   const pad = (n) => String(n).padStart(2, "0");
 
@@ -28,9 +50,12 @@ export default function AlquilerForm({ onSubmit, clientes = [], vehiculos = [] }
     const inicio = inicioStr ? new Date(inicioStr) : null;
     const fin = finStr ? new Date(finStr) : null;
 
-    // Validar fecha de inicio
-    if (inicio && inicio < now) {
-      errInicio = "La fecha de inicio no puede ser anterior a la actual.";
+    // Validar fecha de inicio (solo si es nuevo alquiler, al editar permitimos fechas pasadas)
+    if (!initialData && inicio && inicio < now) {
+      // Damos un margen de 5 minutos por si acaso
+      if ((now - inicio) > 5 * 60 * 1000) {
+          errInicio = "La fecha de inicio no puede ser anterior a la actual.";
+      }
     }
 
     // Validar fecha de fin
@@ -54,6 +79,7 @@ export default function AlquilerForm({ onSubmit, clientes = [], vehiculos = [] }
   // ==============================
   const handleInicioChange = (e) => {
     const value = e.target.value;
+    if(!value) return;
 
     // Desarmar fecha EXACTA sin timezone
     const [fecha, hora] = value.split("T");
@@ -71,7 +97,8 @@ export default function AlquilerForm({ onSubmit, clientes = [], vehiculos = [] }
     const newForm = {
       ...form,
       fecha_hora_inicio: value,
-      fecha_hora_fin_prevista: finLocal
+      // Solo autocompletamos el fin si no estamos editando (para no pisar datos reales)
+      fecha_hora_fin_prevista: initialData ? form.fecha_hora_fin_prevista : finLocal
     };
 
     setForm(newForm);
@@ -96,70 +123,100 @@ export default function AlquilerForm({ onSubmit, clientes = [], vehiculos = [] }
   const submit = async (e) => {
     e.preventDefault();
 
-    if (errors.inicio || errors.fin) return; // no debería pasar
+    if (errors.inicio || errors.fin) return; 
 
     await onSubmit(form);
     
-    // Limpieza si se creó bien
-    setForm({
-      id_cliente: "",
-      id_vehiculo: "",
-      id_empleado: "1",
-      fecha_hora_inicio: "",
-      fecha_hora_fin_prevista: ""
-    });
+    // Limpieza solo si es creación nueva
+    if (!initialData) {
+        setForm(emptyState);
+    }
   };
 
   return (
     <form className="card form" onSubmit={submit}>
-      <h3>Nuevo Alquiler</h3>
-      {/* Cliente */}
-      <select name="id_cliente" value={form.id_cliente} onChange={change} required>
-        <option value="">Cliente</option>
-        {clientes.map(c => (
-          <option key={c.id_cliente} value={c.id_cliente}>
-            {c.nombre} {c.apellido}
-          </option>
-        ))}
-      </select>
+      <h3>{initialData ? `Editar Alquiler #${initialData.id_alquiler}` : "Nuevo Alquiler"}</h3>
+      
+      {/* Fila 1: Cliente y Empleado */}
+      <div style={{display: 'flex', gap: '10px'}}>
+          <select name="id_cliente" value={form.id_cliente} onChange={change} required style={{flex: 1}}>
+            <option value="">Seleccione Cliente</option>
+            {clientes.map(c => {
+              if (c.estado === 'eliminado') return null;
+              return (
+                <option key={c.id_cliente} value={c.id_cliente}>
+                  {c.nombre} {c.apellido}
+                </option>
+              );
+            })}
+          </select>
+
+          <select name="id_empleado" value={form.id_empleado} onChange={change} required style={{flex: 1}}>
+            <option value="">Seleccione Empleado</option>
+            {empleados.map(e => (
+                <option key={e.id_empleado} value={e.id_empleado}>
+                    {e.nombre} {e.apellido}
+                </option>
+            ))}
+          </select>
+      </div>
 
       {/* Vehículo */}
       <select name="id_vehiculo" value={form.id_vehiculo} onChange={change} required>
-        <option value="">Vehículo</option>
-        {vehiculos.map(v => (
-          <option key={v.id_vehiculo} value={v.id_vehiculo}>
-            {v.patente} — {v.marca} {v.nombre} {v.modelo}
-          </option>
-        ))}
+        <option value="">Seleccione Vehículo</option>
+        {vehiculos.map(v => {
+          // Mostramos el vehículo si está disponible O si es el que ya tiene este alquiler (para que no desaparezca al editar)
+          const isSameVehicle = initialData && String(v.id_vehiculo) === String(initialData.id_vehiculo);
+          if (v.estado !== 'disponible' && !isSameVehicle) return null;
+
+          return (
+            <option key={v.id_vehiculo} value={v.id_vehiculo}>
+              {v.patente} — {v.marca} {v.modelo} (${v.precio_diario}/día)
+            </option>
+          );
+        })}
       </select>
 
-      {/* Inicio */}
-      <label>Inicio</label>
-      <input
-        name="fecha_hora_inicio"
-        type="datetime-local"
-        value={form.fecha_hora_inicio}
-        onChange={handleInicioChange}
-        required
-      />
-      <div className="error-msg">{errors.inicio}</div>
+      {/* Fechas */}
+      <div style={{display: 'flex', gap: '10px'}}>
+          <div style={{flex: 1}}>
+            <label style={{fontSize: '0.85rem', display: 'block', marginBottom: '4px'}}>Inicio</label>
+            <input
+                name="fecha_hora_inicio"
+                type="datetime-local"
+                value={form.fecha_hora_inicio}
+                onChange={handleInicioChange}
+                required
+                style={{width: '100%'}}
+            />
+            <div className="error-msg" style={{color: 'red', fontSize: '0.8rem'}}>{errors.inicio}</div>
+          </div>
 
-      {/* Fin previsto */}
-      <label>Fin previsto</label>
-      <input
-        name="fecha_hora_fin_prevista"
-        type="datetime-local"
-        value={form.fecha_hora_fin_prevista}
-        onChange={change}
-        required
-      />
-      <div className="error-msg">{errors.fin}</div>
+          <div style={{flex: 1}}>
+            <label style={{fontSize: '0.85rem', display: 'block', marginBottom: '4px'}}>Fin Previsto</label>
+            <input
+                name="fecha_hora_fin_prevista"
+                type="datetime-local"
+                value={form.fecha_hora_fin_prevista}
+                onChange={change}
+                required
+                style={{width: '100%'}}
+            />
+            <div className="error-msg" style={{color: 'red', fontSize: '0.8rem'}}>{errors.fin}</div>
+          </div>
+      </div>
 
-      {/* Botón */}
+      {/* Botones */}
       <div style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
-        <button type="submit" style={{backgroundColor: '#10B981', flex: 1, color: 'white', border: 'none', padding: '10px', borderRadius: '5px', cursor: 'pointer'}}>
-          {"Crear Alquiler"}
+        <button type="submit" style={{backgroundColor: initialData ? '#F59E0B' : '#10B981', flex: 1, color: 'white', border: 'none', padding: '10px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold'}}>
+          {initialData ? "Guardar Cambios" : "Crear Alquiler"}
         </button>
+        
+        {onCancel && (
+            <button type="button" onClick={onCancel} style={{backgroundColor: '#6B7280', flex: 0.5, color: 'white', border: 'none', padding: '10px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold'}}>
+                Cancelar
+            </button>
+        )}
       </div>
     </form>
   );

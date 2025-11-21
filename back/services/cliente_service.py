@@ -24,4 +24,4 @@ class ClienteService:
 
     @staticmethod
     def delete(id_cliente):
-        return Cliente.delete(id_cliente)
+        return Cliente.update(id_cliente, estado="eliminado")

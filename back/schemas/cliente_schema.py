@@ -8,6 +8,7 @@ class ClienteBase(BaseModel):
     telefono: str | None = None
     email: str | None = None
     direccion: str | None = None
+    estado: str | None = None
 
 class ClienteCreate(ClienteBase):
     pass
@@ -20,6 +21,7 @@ class ClienteUpdate(BaseModel):
     telefono: str | None = None
     email: str | None = None
     direccion: str | None = None
+    estado: str | None = None
 
 class ClienteResponse(ClienteBase):
     id_cliente: int
