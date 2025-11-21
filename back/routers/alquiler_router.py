@@ -49,6 +49,7 @@ def get_alquiler(id_alquiler: int):
 
 @router.post("/{id_alquiler}/devolver", response_model=AlquilerResponse)
 def devolver_alquiler(id_alquiler: int):
+    print("Iniciando devolución del alquiler...")
     alq = AlquilerService.devolver(id_alquiler)
 
     if not alq:

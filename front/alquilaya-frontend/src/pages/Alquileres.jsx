@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import AlquilerForm from "../components/AlquilerForm";
 import AlquilerList from "../components/AlquilerList";
 // Agregamos getEmpleados a los imports
-import { getAlquileres, createAlquiler, deleteAlquiler, getVehiculos, getClientes, getEmpleados, updateAlquiler } from "../api/api";
+import { getAlquileres, createAlquiler, deleteAlquiler, getVehiculos, getClientes, getEmpleados, updateAlquiler, devolverAlquiler } from "../api/api";
 
 export default function Alquileres(){
   const [alquileres, setAlquileres] = useState([]);
@@ -58,10 +58,12 @@ export default function Alquileres(){
 
   async function handleDevolver(id){
   // marcar como finalizado
-  await updateAlquiler(id, {
-    estado: 'finalizado',
-    fecha_hora_fin_real: new Date().toISOString()
-  });
+  await devolverAlquiler(id
+    //, {
+    //estado: 'finalizado'
+    //fecha_hora_fin_real: new Date().toISOString()
+//  }
+);
   load(); // recargar la lista
 }
 

@@ -130,6 +130,8 @@ class Vehiculo:
             return Vehiculo.get_by_id(id_vehiculo)
 
         params.append(id_vehiculo)
+        print("Query fields:", query_fields)
+        print("Updating Vehiculo with params:", params)
 
         try:
             cur.execute(f"UPDATE Vehiculos SET {', '.join(query_fields)} WHERE id_vehiculo=?", params)

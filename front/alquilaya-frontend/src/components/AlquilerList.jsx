@@ -8,11 +8,11 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
   
   // Estado para los 5 filtros
   const [filters, setFilters] = useState({
-    pendientes: true,   // Amarillo
-    confirmados: true,  // Azul
-    activos: true,      // Verde
-    finalizados: false, // Gris
-    eliminados: false   // Rojo
+    pendientes: true,   // Amarillo: Recién creados
+    confirmados: true,  // Azul: Pagados, listos para entrega
+    activos: true,      // Verde: En curso
+    finalizados: false, // Gris: Historial
+    eliminados: false   // Rojo: Papelera
   });
 
   // --- Helpers ---
@@ -21,23 +21,20 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
     try { return new Date(iso).toLocaleString(); } catch (e) { return iso; }
   };
 
-  const calcularDiasCobrados = (inicioISO, finPrevistaISO) => {
+  // Calcula días entre dos fechas (mínimo 1 día)
+  const calcularDias = (inicioISO, finPrevistaISO) => {
     if (!inicioISO || !finPrevistaISO) return 0;
-
     const inicio = new Date(inicioISO);
     const fin = new Date(finPrevistaISO);
-
     const diffMs = fin - inicio;
-    const diffHoras = diffMs / 1000 / 3600;
-
-    // Regla: cada periodo de 24h incrementa un día
-    return Math.ceil(diffHoras / 24);
-};
+    const diffHoras = diffMs / (1000 * 60 * 60);
+    return Math.max(1, Math.ceil(diffHoras / 24)); // Mínimo 1 día
+  };
 
   const getPrecioVehiculo = (id) => {
     const v = vehiculos.find(x => x.id_vehiculo === id);
     return v ? Number(v.precio_diario || 0) : 0;
-};
+  };
 
   const getClienteNombre = (id) => {
     const c = clientes.find(x => x.id_cliente === id);
@@ -46,7 +43,7 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
 
   const getVehiculoNombre = (id) => {
     const v = vehiculos.find(x => x.id_vehiculo === id);
-    return v ? `${v.marca} ${v.modelo} (${v.patente})` : "Desconocido";
+    return v ? `${v.marca} ${v.nombre} ${v.modelo} (${v.patente})` : "Desconocido";
   };
 
   // --- Ordenamiento ---
@@ -63,28 +60,28 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
     return sortConfig.key === name ? sortConfig.direction : undefined;
   };
 
-  // Helper para toggles
   const toggleFilter = (key) => {
     setFilters(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // --- Procesamiento Principal ---
+  // --- Procesamiento de Datos ---
   const processedItems = useMemo(() => {
+    // 1. Enriquecer datos (Nombres y Precios)
     let data = items.map(item => {
       const precioDiario = getPrecioVehiculo(item.id_vehiculo);
-      const dias = calcularDiasCobrados(item.fecha_hora_inicio, item.fecha_hora_fin_prevista); 
+      const dias = calcularDias(item.fecha_hora_inicio, item.fecha_hora_fin_prevista);
       const precioTotal = precioDiario * dias;
 
       return {
-          ...item,
-          clienteNombre: getClienteNombre(item.id_cliente),
-          vehiculoNombre: getVehiculoNombre(item.id_vehiculo),
-          diasCobrados: dias,
-          precioTotal
+        ...item,
+        clienteNombre: getClienteNombre(item.id_cliente),
+        vehiculoNombre: getVehiculoNombre(item.id_vehiculo),
+        diasCobrados: dias,
+        precioTotal
       };
     });
 
-    // A. FILTROS DE ESTADO
+    // 2. FILTRO POR ESTADO
     data = data.filter(i => {
       const s = i.estado; 
       if (filters.pendientes && s === 'pendiente') return true;
@@ -95,7 +92,7 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
       return false;
     });
 
-    // B. BUSCADOR
+    // 3. BUSCADOR
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       data = data.filter(i => 
@@ -105,7 +102,7 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
       );
     }
 
-    // C. ORDENAR
+    // 4. ORDENAR
     if (sortConfig.key) {
       data.sort((a, b) => {
         const vA = a[sortConfig.key]?.toString().toLowerCase() || "";
@@ -140,13 +137,13 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
         )}
 
         {/* Activo -> Devolver */}
-        {s === 'activo' && (
-            <button style={{...btnBase, backgroundColor: '#1D4ED8'}} onClick={() => onDevolver(id)} title="Devolver Vehículo">
+        {s === 'activo' && onDevolver && (
+            <button style={{...btnBase, backgroundColor: '#1D4ED8'}} onClick={() => onDevolver(id)} title="Recibir Vehículo">
                 Devolver
             </button>
         )}
 
-        {/* Editar */}
+        {/* Editar (Solo si no está finalizado/eliminado) */}
         {onEdit && s !== 'finalizado' && s !== 'devuelto' && s !== 'eliminado' && (
             <button style={{...btnBase, backgroundColor: '#F59E0B'}} onClick={() => onEdit(alquiler)}>
                 Editar
@@ -169,62 +166,72 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
         
         <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
             <h3>Alquileres ({processedItems.length})</h3>
-            <input type="text" placeholder="🔍 Buscar..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} style={{padding:'6px 12px', borderRadius:'6px', border:'1px solid #ccc'}} />
-        </div>
-
-        {/* BARRA DE FILTROS */}
-        <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px'}}>
             
-            <label style={{
-                padding: '4px 10px', borderRadius: '15px', cursor: 'pointer', fontSize: '0.85rem',
-                backgroundColor: filters.pendientes ? '#fef9c3' : '#f9fafb', border: filters.pendientes ? '1px solid #facc15' : '1px solid #e5e7eb',
-                color: filters.pendientes ? '#854d0e' : '#9ca3af', fontWeight: filters.pendientes ? 'bold' : 'normal'
-            }}>
-                <input type="checkbox" checked={filters.pendientes} onChange={() => toggleFilter('pendientes')} style={{display:'none'}} />
-                Pendientes
-            </label>
+            {/* INPUT DE BÚSQUEDA PEGADO A LOS FILTROS */}
+            <div style={{display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end', flex: 1}}>
+                
+                {/* BARRA DE FILTROS */}
+                <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
+                    <label style={{
+                        padding: '4px 10px', borderRadius: '15px', cursor: 'pointer', fontSize: '0.85rem',
+                        backgroundColor: filters.pendientes ? '#fef9c3' : '#f9fafb', border: filters.pendientes ? '1px solid #facc15' : '1px solid #e5e7eb',
+                        color: filters.pendientes ? '#854d0e' : '#9ca3af', fontWeight: filters.pendientes ? 'bold' : 'normal'
+                    }}>
+                        <input type="checkbox" checked={filters.pendientes} onChange={() => toggleFilter('pendientes')} style={{display:'none'}} />
+                        Pendientes
+                    </label>
 
-            <label style={{
-                padding: '4px 10px', borderRadius: '15px', cursor: 'pointer', fontSize: '0.85rem',
-                backgroundColor: filters.confirmados ? '#dbeafe' : '#f9fafb', border: filters.confirmados ? '1px solid #60a5fa' : '1px solid #e5e7eb',
-                color: filters.confirmados ? '#1e40af' : '#9ca3af', fontWeight: filters.confirmados ? 'bold' : 'normal'
-            }}>
-                <input type="checkbox" checked={filters.confirmados} onChange={() => toggleFilter('confirmados')} style={{display:'none'}} />
-                Confirmados
-            </label>
+                    <label style={{
+                        padding: '4px 10px', borderRadius: '15px', cursor: 'pointer', fontSize: '0.85rem',
+                        backgroundColor: filters.confirmados ? '#dbeafe' : '#f9fafb', border: filters.confirmados ? '1px solid #60a5fa' : '1px solid #e5e7eb',
+                        color: filters.confirmados ? '#1e40af' : '#9ca3af', fontWeight: filters.confirmados ? 'bold' : 'normal'
+                    }}>
+                        <input type="checkbox" checked={filters.confirmados} onChange={() => toggleFilter('confirmados')} style={{display:'none'}} />
+                        Confirmados
+                    </label>
 
-            <label style={{
-                padding: '4px 10px', borderRadius: '15px', cursor: 'pointer', fontSize: '0.85rem',
-                backgroundColor: filters.activos ? '#dcfce7' : '#f9fafb', border: filters.activos ? '1px solid #4ade80' : '1px solid #e5e7eb',
-                color: filters.activos ? '#166534' : '#9ca3af', fontWeight: filters.activos ? 'bold' : 'normal'
-            }}>
-                <input type="checkbox" checked={filters.activos} onChange={() => toggleFilter('activos')} style={{display:'none'}} />
-                Activos
-            </label>
+                    <label style={{
+                        padding: '4px 10px', borderRadius: '15px', cursor: 'pointer', fontSize: '0.85rem',
+                        backgroundColor: filters.activos ? '#dcfce7' : '#f9fafb', border: filters.activos ? '1px solid #4ade80' : '1px solid #e5e7eb',
+                        color: filters.activos ? '#166534' : '#9ca3af', fontWeight: filters.activos ? 'bold' : 'normal'
+                    }}>
+                        <input type="checkbox" checked={filters.activos} onChange={() => toggleFilter('activos')} style={{display:'none'}} />
+                        Activos
+                    </label>
 
-            <div style={{width: '1px', height: '20px', backgroundColor: '#ddd', margin: '0 5px'}}></div>
+                    <label style={{
+                        padding: '4px 10px', borderRadius: '15px', cursor: 'pointer', fontSize: '0.85rem',
+                        backgroundColor: filters.finalizados ? '#e5e7eb' : '#f9fafb', border: filters.finalizados ? '1px solid #9ca3af' : '1px solid #e5e7eb',
+                        color: filters.finalizados ? '#374151' : '#9ca3af', fontWeight: filters.finalizados ? 'bold' : 'normal'
+                    }}>
+                        <input type="checkbox" checked={filters.finalizados} onChange={() => toggleFilter('finalizados')} style={{display:'none'}} />
+                        Finalizados
+                    </label>
 
-            <label style={{
-                padding: '4px 10px', borderRadius: '15px', cursor: 'pointer', fontSize: '0.85rem',
-                backgroundColor: filters.finalizados ? '#e5e7eb' : '#f9fafb', border: filters.finalizados ? '1px solid #9ca3af' : '1px solid #e5e7eb',
-                color: filters.finalizados ? '#374151' : '#9ca3af', fontWeight: filters.finalizados ? 'bold' : 'normal'
-            }}>
-                <input type="checkbox" checked={filters.finalizados} onChange={() => toggleFilter('finalizados')} style={{display:'none'}} />
-                Historial
-            </label>
+                    <label style={{
+                        padding: '4px 10px', borderRadius: '15px', cursor: 'pointer', fontSize: '0.85rem',
+                        backgroundColor: filters.eliminados ? '#fee2e2' : '#f9fafb', border: filters.eliminados ? '1px solid #f87171' : '1px solid #e5e7eb',
+                        color: filters.eliminados ? '#991b1b' : '#9ca3af', fontWeight: filters.eliminados ? 'bold' : 'normal'
+                    }}>
+                        <input type="checkbox" checked={filters.eliminados} onChange={() => toggleFilter('eliminados')} style={{display:'none'}} />
+                        Eliminados
+                    </label>
+                </div>
 
-            <label style={{
-                padding: '4px 10px', borderRadius: '15px', cursor: 'pointer', fontSize: '0.85rem',
-                backgroundColor: filters.eliminados ? '#fee2e2' : '#f9fafb', border: filters.eliminados ? '1px solid #f87171' : '1px solid #e5e7eb',
-                color: filters.eliminados ? '#991b1b' : '#9ca3af', fontWeight: filters.eliminados ? 'bold' : 'normal'
-            }}>
-                <input type="checkbox" checked={filters.eliminados} onChange={() => toggleFilter('eliminados')} style={{display:'none'}} />
-                Eliminados
-            </label>
+                <div style={{width: '1px', height: '20px', backgroundColor: '#ddd'}}></div>
 
+                <input 
+                    type="text" 
+                    placeholder="🔍 Buscar..." 
+                    value={searchTerm} 
+                    onChange={e=>setSearchTerm(e.target.value)} 
+                    style={{padding:'6px 12px', borderRadius:'6px', border:'1px solid #ccc', minWidth: '150px'}} 
+                />
+            </div>
         </div>
       </div>
 
+      {/* Tabla */}
       <div style={{overflowX: 'auto'}}>
         <table className="table">
             <thead>
@@ -233,8 +240,8 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
                     <th onClick={()=>requestSort('clienteNombre')} style={{cursor:'pointer'}}>Cliente</th>
                     <th onClick={()=>requestSort('vehiculoNombre')} style={{cursor:'pointer'}}>Vehículo</th>
                     <th>Fechas</th>
-                    <th>Precio</th>                    
-                    <th>Estado</th>
+                    <th>Precio Est.</th>
+                    <th onClick={()=>requestSort('estado')} style={{cursor:'pointer'}}>Estado {getClassNamesFor('estado') === 'asc' ? '▲' : '▼'}</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -244,20 +251,18 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
                         <td style={{fontWeight:'bold'}}>#{a.id_alquiler}</td>
                         <td>{a.clienteNombre}</td>
                         <td>{a.vehiculoNombre}</td>
-                        <td style={{fontSize: '0.9rem'}}>
-                            <div>Inicio: {format(a.fecha_hora_inicio)}</div>
-                            <div style={{color: '#666'}}>Fin previsto: {format(a.fecha_hora_fin_prevista)}</div>
-                            <div style={{color: '#666'}}>Fin real: {format(a.fecha_hora_fin_real)}</div>
+                        <td style={{fontSize: '0.85rem', minWidth: '160px'}}>
+                            <div><strong>In:</strong> {format(a.fecha_hora_inicio)}</div>
+                            <div style={{color: '#666'}}><strong>Fin:</strong> {format(a.fecha_hora_fin_prevista)}</div>
+                            {a.fecha_hora_fin_real && <div style={{color: '#166534', marginTop:'2px'}}><strong>Real:</strong> {format(a.fecha_hora_fin_real)}</div>}
                         </td>
                         <td>
                             ${a.precioTotal.toLocaleString("es-AR")}
-                            <div style={{fontSize:'0.75rem', color:'#666'}}>
-                                ({a.diasCobrados} día/s)
-                            </div>
+                            <div style={{fontSize:'0.75rem', color:'#666'}}>({a.diasCobrados} días)</div>
                         </td>
                         <td>
                             <span style={{
-                                textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 'bold', padding: '3px 8px', borderRadius: '4px',
+                                textTransform: 'uppercase', fontSize: '0.7rem', fontWeight: 'bold', padding: '3px 8px', borderRadius: '4px',
                                 backgroundColor: 
                                     a.estado === 'pendiente' ? '#fef9c3' : 
                                     (a.estado === 'confirmado' || a.estado === 'confirmada') ? '#dbeafe' :
@@ -274,7 +279,7 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
                         <td>{renderActions(a)}</td>
                     </tr>
                 ))}
-                {processedItems.length === 0 && <tr><td colSpan="6" style={{textAlign:'center', padding:'20px'}}>No hay datos.</td></tr>}
+                {processedItems.length === 0 && <tr><td colSpan="7" style={{textAlign:'center', padding:'20px'}}>No hay datos.</td></tr>}
             </tbody>
         </table>
       </div>

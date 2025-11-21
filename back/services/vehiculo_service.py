@@ -17,6 +17,10 @@ class VehiculoService:
     @staticmethod
     def update(id_vehiculo, data):
         return Vehiculo.update(id_vehiculo, **data)
+    
+    @staticmethod
+    def update_estado(id_vehiculo, nuevo_estado):
+        return Vehiculo.update_estado(id_vehiculo, nuevo_estado)
 
     @staticmethod
     def delete(id_vehiculo):

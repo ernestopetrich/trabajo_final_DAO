@@ -1,7 +1,14 @@
 import sqlite3
 import database
 from datetime import datetime, timedelta
-from models.state_alquiler import EstadoActivo, EstadoFinalizado
+# Importamos todas las clases de estado
+from models.state_alquiler import (
+    EstadoPendiente, 
+    EstadoConfirmado, 
+    EstadoActivo, 
+    EstadoFinalizado,
+    EstadoCancelado
+)
 
 class Alquiler:
     def __init__(self, id_alquiler, id_cliente, id_vehiculo, id_empleado, fecha_hora_inicio, 
@@ -14,64 +21,89 @@ class Alquiler:
         self.fecha_hora_fin_prevista = fecha_hora_fin_prevista
         self.fecha_hora_fin_real = fecha_hora_fin_real
         self.costo_total = costo_total
-        self.estado = estado
-        self.state = self._crear_estado(self.estado)
+        
+        # Inicialización del State
+        self.estado_str = estado # Guardamos el string original internamente
+        self.state = self._crear_estado(estado)
+
+    # --- CORRECCIÓN CLAVE ---
+    @property
+    def estado(self):
+        """
+        Propiedad para que Pydantic (la API) pueda leer 'alquiler.estado'.
+        Devuelve el string del estado actual.
+        """
+        return self.estado_str
 
     def __repr__(self):
-        return f"<Alquiler #{self.id_alquiler} (Veh: {self.id_vehiculo}) - {self.estado}>"
+        return f"<Alquiler #{self.id_alquiler} - Estado: {self.estado_str}>"
     
-    def _crear_estado(self, estado):
-        if estado == "activo":
+    # --- FACTORY DE ESTADOS ---
+    def _crear_estado(self, estado_db):
+        """Convierte el string de la BD en un objeto Estado."""
+        estado_db = estado_db.lower()
+        if estado_db == "pendiente":
+            return EstadoPendiente()
+        elif estado_db == "confirmado":
+            return EstadoConfirmado()
+        elif estado_db == "activo":
             return EstadoActivo()
-        elif estado == "finalizado":
+        elif estado_db == "finalizado":
             return EstadoFinalizado()
+        elif estado_db == "cancelado" or estado_db == "eliminado":
+            return EstadoCancelado()
         else:
-            return EstadoActivo()
-        
-    def set_estado(self, nuevo_estado):
-        self.estado = nuevo_estado
-        self.state = self._crear_estado(nuevo_estado)
+            print(f"Advertencia: Estado desconocido '{estado_db}', se tratará como Finalizado.")
+            return EstadoFinalizado()
+
+    # --- MÉTODOS DEL CONTEXTO (DELEGACIÓN) ---
+    def confirmar(self):
+        return self.state.confirmar(self)
+
+    def iniciar(self):
+        return self.state.iniciar(self)
+
+    def devolver(self):
+        return self.state.devolver(self)
+
+    def cancelar(self):
+        return self.state.cancelar(self)
+
+    # --- MÉTODOS INTERNOS PARA EL STATE ---
+    
+    def set_estado(self, nuevo_estado_str):
+        """
+        Cambia el estado del objeto y lo persiste en la BD.
+        Este método es llamado POR los objetos State.
+        """
+        self.estado_str = nuevo_estado_str # Actualizamos el string interno
+        self.state = self._crear_estado(nuevo_estado_str) # Actualizamos el objeto State
 
         conn = database.get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("UPDATE Alquileres SET estado = ? WHERE id_alquiler = ?", (nuevo_estado, self.id_alquiler))
+        cursor.execute("UPDATE Alquileres SET estado = ? WHERE id_alquiler = ?", (nuevo_estado_str, self.id_alquiler))
         conn.commit()
         conn.close()
 
     def set_fecha_fin_real(self, fecha_iso):
         self.fecha_hora_fin_real = fecha_iso
-
         conn = database.get_db_connection()
         cursor = conn.cursor()
         cursor.execute("UPDATE Alquileres SET fecha_hora_fin_real = ? WHERE id_alquiler = ?", (fecha_iso, self.id_alquiler))
         conn.commit()
         conn.close()
 
+    # --- MÉTODOS ESTÁTICOS (CRUD) ---
     @staticmethod
     def create(id_cliente, id_vehiculo, id_empleado, fecha_hora_inicio, fecha_hora_fin_prevista):
-        """Crea un nuevo alquiler y marca el vehículo como 'alquilado'."""
-
-        # Convertir a datetime
-        inicio = datetime.fromisoformat(fecha_hora_inicio)
-        fin_prevista = datetime.fromisoformat(fecha_hora_fin_prevista)
-        ahora = datetime.now()
-
-        # 1) Validar que inicio sea >= ahora
-        if inicio < ahora:
-            print(" La fecha de inicio no puede ser menor a la fecha y hora actual.")
-            return None
-
-        # 2) Validar que fin prevista sea mínimo +1 hora
-        if fin_prevista < inicio + timedelta(hours=1):
-            print(" La fecha/hora fin prevista debe ser mínimo 1 hora después del inicio.")
-            return None
-        # 3) Crear alquiler y actualizar estado del vehículo
         conn = database.get_db_connection()
         cursor = conn.cursor()
         try:
+            estado_inicial = 'activo' 
+            
             cursor.execute(
                 "INSERT INTO Alquileres (id_cliente, id_vehiculo, id_empleado, fecha_hora_inicio, fecha_hora_fin_prevista, estado) VALUES (?, ?, ?, ?, ?, ?)",
-                (id_cliente, id_vehiculo, id_empleado, fecha_hora_inicio, fecha_hora_fin_prevista, 'activo')
+                (id_cliente, id_vehiculo, id_empleado, fecha_hora_inicio, fecha_hora_fin_prevista, estado_inicial)
             )
             id_alquiler = cursor.lastrowid
             
@@ -79,7 +111,6 @@ class Alquiler:
             
             conn.commit()
             return Alquiler.get_by_id(id_alquiler)
-        
         except sqlite3.Error as e:
             print(f"Error al crear alquiler: {e}")
             conn.rollback()
@@ -87,13 +118,8 @@ class Alquiler:
         finally:
             conn.close()
 
-        def devolver(self):
-            return self.state.devolver(self)
-
-
     @staticmethod
     def get_by_id(id_alquiler):
-        """Obtiene un alquiler por su ID."""
         conn = database.get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Alquileres WHERE id_alquiler = ?", (id_alquiler,))
@@ -105,7 +131,6 @@ class Alquiler:
     
     @staticmethod
     def get_all():
-        """Obtiene todos los alquileres."""
         conn = database.get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Alquileres")

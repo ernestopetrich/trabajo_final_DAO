@@ -16,6 +16,7 @@ class VehiculoUpdate(BaseModel):
     modelo: str | None = None
     nombre: str | None = None
     precio_diario: float | None = None
+    estado: str | None = None
 
 class VehiculoEstadoUpdate(BaseModel):
     estado: str
