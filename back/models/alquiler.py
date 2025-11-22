@@ -1,7 +1,8 @@
 import sqlite3
-import database
+from database import Database
 from datetime import datetime, timedelta
 from math import ceil 
+
 # Importamos todas las clases de estado
 from models.state_alquiler import (
     EstadoPendiente, 
@@ -80,7 +81,7 @@ class Alquiler:
         self.estado_str = nuevo_estado_str # Actualizamos el string interno
         self.state = self._crear_estado(nuevo_estado_str) # Actualizamos el objeto State
 
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("UPDATE Alquileres SET estado = ? WHERE id_alquiler = ?", (nuevo_estado_str, self.id_alquiler))
         conn.commit()
@@ -88,7 +89,7 @@ class Alquiler:
 
     def set_fecha_fin_real(self, fecha_iso):
         self.fecha_hora_fin_real = fecha_iso
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("UPDATE Alquileres SET fecha_hora_fin_real = ? WHERE id_alquiler = ?", (fecha_iso, self.id_alquiler))
         conn.commit()
@@ -100,7 +101,7 @@ class Alquiler:
         Calcula el costo total: (Días * Precio) + Multas + Daños.
         Se llama automáticamente desde el Estado al finalizar.
         """
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         
         # 1. Obtener precio diario del vehículo
@@ -164,7 +165,7 @@ class Alquiler:
     # --- MÉTODOS ESTÁTICOS (CRUD) ---
     @staticmethod
     def create(id_cliente, id_vehiculo, id_empleado, fecha_hora_inicio, fecha_hora_fin_prevista):
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         try:
             estado_inicial = 'activo' 
@@ -174,9 +175,7 @@ class Alquiler:
                 (id_cliente, id_vehiculo, id_empleado, fecha_hora_inicio, fecha_hora_fin_prevista, estado_inicial)
             )
             id_alquiler = cursor.lastrowid
-            
             cursor.execute("UPDATE Vehiculos SET estado = 'alquilado' WHERE id_vehiculo = ?", (id_vehiculo,))
-            
             conn.commit()
             return Alquiler.get_by_id(id_alquiler)
         except sqlite3.Error as e:
@@ -188,7 +187,7 @@ class Alquiler:
 
     @staticmethod
     def get_by_id(id_alquiler):
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Alquileres WHERE id_alquiler = ?", (id_alquiler,))
         row = cursor.fetchone()
@@ -199,27 +198,22 @@ class Alquiler:
     
     @staticmethod
     def get_all():
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Alquileres")
         rows = cursor.fetchall()
         conn.close()
         return [Alquiler(*row) for row in rows]
-    
-    
-    def update_estado(self, nuevo_estado):
-        """Actualiza el estado del alquiler (ej. 'activo', 'finalizado')."""
-        conn = database.get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("UPDATE Alquileres SET estado = ? WHERE id_alquiler = ?", (nuevo_estado, self.id_alquiler))
-        conn.commit()
-        conn.close()
 
     @staticmethod
     def update(id_alquiler, **fields):
         """Actualiza cualquier campo del alquiler."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
+
+        if 'estado' in fields:
+            del fields['estado']  # El estado se maneja por los métodos del State
+            print(f"ADVERTENCIA: Se intentó actualizar 'estado' directamente en Alquiler #{id_alquiler}. El campo será ignorado.")
 
         # Filtrar campos válidos (evita columnas inexistentes)
         valid_fields = {k: v for k, v in fields.items() if v is not None}
@@ -238,26 +232,11 @@ class Alquiler:
                 params
             )
             conn.commit()
+
+        except sqlite3.Error as e:
+            print(f"Error al actualizar alquiler: {e}")
+            conn.rollback()
         finally:
             conn.close()
 
         return Alquiler.get_by_id(id_alquiler)
-
-
-
-    def calcular_monto(self):
-        """Calcula el monto total del alquiler basado en la duración y el precio diario del vehículo."""
-        conn = database.get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT precio_diario FROM Vehiculos WHERE id_vehiculo = ?", (self.id_vehiculo,))
-        row = cursor.fetchone()
-        conn.close()
-        if row:
-            precio_diario = row[0]
-            from datetime import datetime
-            fecha_inicio = datetime.fromisoformat(self.fecha_hora_inicio)
-            fecha_fin = datetime.fromisoformat(self.fecha_hora_fin_prevista)
-            dias_alquiler = (fecha_fin - fecha_inicio).days + 1  # Incluir el día de inicio
-            return dias_alquiler * precio_diario
-        return 0
-    

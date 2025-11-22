@@ -1,5 +1,5 @@
 import sqlite3
-import database
+from database import Database
 
 class DetalleFactura:
     def __init__(self, id_detalle, id_factura, descripcion, monto):
@@ -14,7 +14,7 @@ class DetalleFactura:
     @staticmethod
     def create(id_factura, descripcion, monto):
         """Crea un nuevo detalle de factura."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         try:
             cursor.execute(
@@ -25,6 +25,7 @@ class DetalleFactura:
             return DetalleFactura.get_by_id(cursor.lastrowid)
         except sqlite3.Error as e:
             print(f"Error al crear detalle de factura: {e}")
+            conn.rollback()
             return None
         finally:
             conn.close()
@@ -32,7 +33,7 @@ class DetalleFactura:
     @staticmethod
     def get_by_id(id_detalle):
         """Obtiene un detalle de factura por su ID."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Detalle_Factura WHERE id_detalle = ?", (id_detalle,))
         row = cursor.fetchone()
@@ -40,3 +41,13 @@ class DetalleFactura:
         if row:
             return DetalleFactura(*row)
         return None
+    
+    @staticmethod
+    def get_by_id_factura(id_factura):
+        """Obtiene todos los detalles de una factura por su ID de factura."""
+        conn = Database().get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Detalle_Factura WHERE id_factura = ?", (id_factura,))
+        rows = cursor.fetchall()
+        conn.close()
+        return [DetalleFactura(*row) for row in rows]

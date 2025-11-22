@@ -1,4 +1,10 @@
 from datetime import datetime
+from services.factura_service import FacturaService
+from services.detalle_factura_service import DetalleFacturaService
+from services.vehiculo_service import VehiculoService
+from services.multa_service import MultaService
+from services.danio_service import DanioService
+
 
 class EstadoAlquiler:
     """
@@ -51,17 +57,47 @@ class EstadoActivo(EstadoAlquiler):
         # Esto usa la fecha real que acabamos de poner vs la fecha de inicio
         costo = alquiler.calcular_y_guardar_costo()
         
+
+        factura = FacturaService.create({   "id_alquiler": alquiler.id_alquiler,
+                                            "fecha_hora_emision": ahora_iso,
+                                            "monto_total": costo,
+                                            "estado_pago": "abonado"
+                                        })
+
+        vehiculo = VehiculoService.get_by_id(alquiler.id_vehiculo)
+
+        detalle = DetalleFacturaService.create({
+            "id_factura": factura.id_factura,
+            "descripcion": f"Alquiler vehículo {vehiculo.marca} {vehiculo.nombre} {vehiculo.modelo} ({vehiculo.patente})",
+            "monto": costo
+        })
+
+        multas = MultaService.get_by_id_alquiler(alquiler.id_alquiler)
+
+        if multas:
+            for multa in multas:
+                detalle_multa = DetalleFacturaService.create({
+                    "id_factura": factura.id_factura,
+                    "descripcion": f"Multa: {multa.descripcion}",
+                    "monto": multa.monto
+                })
+        
+        danios = DanioService.get_by_id_alquiler(alquiler.id_alquiler)
+        if danios:
+            for danio in danios:
+                detalle_danio = DetalleFacturaService.create({
+                    "id_factura": factura.id_factura,
+                    "descripcion": f"Daño: {danio.descripcion}",
+                    "monto": danio.costo_reparacion
+                })
+
+        
+
+
         # 3. Cambiar estado a finalizado
         alquiler.set_estado("finalizado")
         
-        # 4. Liberar vehículo en la BD
-        # Importamos database aquí dentro para evitar problemas de importación circular
-        import database 
-        conn = database.get_db_connection()
-        # Liberamos el vehículo (estado 'disponible')
-        conn.execute("UPDATE Vehiculos SET estado = 'disponible' WHERE id_vehiculo = ?", (alquiler.id_vehiculo,))
-        conn.commit()
-        conn.close()
+        VehiculoService.update(alquiler.id_vehiculo, { "estado": "disponible" })
 
         return f"Vehículo devuelto. Alquiler finalizado. Costo total calculado: ${costo}"
 

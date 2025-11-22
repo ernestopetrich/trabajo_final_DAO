@@ -161,7 +161,7 @@ export default function VehiculoList({ items = [], onDelete, onEdit }) {
               </th>
 
               <th onClick={() => requestSort('nombre')} style={{cursor: 'pointer', userSelect: 'none'}}>
-                Categoría {getClassNamesFor('nombre') === 'asc' ? '▲' : getClassNamesFor('nombre') === 'desc' ? '▼' : ''}
+                Nombre {getClassNamesFor('nombre') === 'asc' ? '▲' : getClassNamesFor('nombre') === 'desc' ? '▼' : ''}
               </th>
               
               <th onClick={() => requestSort('precio_diario')} style={{cursor: 'pointer', userSelect: 'none'}}>

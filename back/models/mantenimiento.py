@@ -1,5 +1,5 @@
 import sqlite3
-import database
+from database import Database
 
 class Mantenimiento:
     def __init__(self, id_mantenimiento, id_vehiculo, fecha_hora_inicio, fecha_hora_fin, descripcion, costo):
@@ -16,7 +16,7 @@ class Mantenimiento:
     @staticmethod
     def create(id_vehiculo, fecha_hora_inicio, fecha_hora_fin, descripcion, costo):
         """Crea un nuevo registro de mantenimiento."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         try:
             cursor.execute(
@@ -34,7 +34,7 @@ class Mantenimiento:
     @staticmethod
     def get_by_id(id_mantenimiento):
         """Obtiene un mantenimiento por su ID."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Mantenimientos WHERE id_mantenimiento = ?", (id_mantenimiento,))
         row = cursor.fetchone()
@@ -46,7 +46,7 @@ class Mantenimiento:
     @staticmethod
     def get_all():
         """Obtiene todos los mantenimientos."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Mantenimientos")
         rows = cursor.fetchall()

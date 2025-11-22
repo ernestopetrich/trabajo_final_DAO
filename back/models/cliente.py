@@ -1,5 +1,5 @@
 import sqlite3
-import database
+from database import Database
 
 class Cliente:
     def __init__(self, id_cliente, tipo_dni, dni, nombre, apellido, telefono, email, direccion, estado):
@@ -19,7 +19,7 @@ class Cliente:
     @staticmethod
     def create(tipo_dni, dni, nombre, apellido, telefono, email, direccion, estado="activo"):
         """Crea un nuevo cliente en la BD."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         try:
             cursor.execute(
@@ -30,6 +30,7 @@ class Cliente:
             return Cliente.get_by_id(cursor.lastrowid)
         except sqlite3.IntegrityError as e:
             print(f"Error al crear cliente: {e}")
+            conn.rollback()
             return None
         finally:
             conn.close()
@@ -37,7 +38,7 @@ class Cliente:
     @staticmethod
     def get_by_id(id_cliente):
         """Obtiene un cliente por su ID."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Clientes WHERE id_cliente = ?", (id_cliente,))
         row = cursor.fetchone()
@@ -49,7 +50,7 @@ class Cliente:
     @staticmethod
     def get_by_dni(dni):
         """Obtiene un cliente por su DNI."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Clientes WHERE dni = ?", (dni,))
         row = cursor.fetchone()
@@ -61,7 +62,7 @@ class Cliente:
     @staticmethod
     def get_all():
         """Obtiene todos los clientes."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Clientes")
         rows = cursor.fetchall()
@@ -70,7 +71,7 @@ class Cliente:
 
     @staticmethod
     def update(id_cliente, **fields):
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
 
         query_fields = [f"{k}=?" for k, v in fields.items() if v is not None]
@@ -85,7 +86,7 @@ class Cliente:
             cursor.execute(f"UPDATE Clientes SET {', '.join(query_fields)} WHERE id_cliente=?", params)
             conn.commit()
             return Cliente.get_by_id(id_cliente)
-        except:
+        except sqlite3.Error as e:
             conn.rollback()
             return None
         finally:

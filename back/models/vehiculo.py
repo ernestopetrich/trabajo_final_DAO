@@ -1,5 +1,5 @@
 import sqlite3
-import database
+from database import Database
 
 class Vehiculo:
     def __init__(self, id_vehiculo, patente, marca, modelo, nombre, precio_diario, estado):
@@ -17,7 +17,7 @@ class Vehiculo:
     @staticmethod
     def create(patente, marca, modelo, nombre, precio_diario, estado='disponible'):
         """Crea un nuevo vehículo."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         try:
             cursor.execute(
@@ -28,6 +28,7 @@ class Vehiculo:
             return Vehiculo.get_by_id(cursor.lastrowid)
         except sqlite3.IntegrityError as e:
             print(f"Error al crear vehículo: {e}")
+            conn.rollback()
             return None
         finally:
             conn.close()
@@ -35,7 +36,7 @@ class Vehiculo:
     @staticmethod
     def get_all():
         """Obtiene todos los vehículos."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Vehiculos")
         rows = cursor.fetchall()
@@ -45,7 +46,7 @@ class Vehiculo:
     @staticmethod
     def get_by_id(id_vehiculo):
         """Obtiene un vehículo por su ID."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Vehiculos WHERE id_vehiculo = ?", (id_vehiculo,))
         row = cursor.fetchone()
@@ -56,7 +57,7 @@ class Vehiculo:
 
     def update_estado(self, nuevo_estado):
         """Actualiza el estado del vehículo (ej. 'disponible', 'alquilado')."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("UPDATE Vehiculos SET estado = ? WHERE id_vehiculo = ?", (nuevo_estado, self.id_vehiculo))
         conn.commit()
@@ -73,7 +74,7 @@ class Vehiculo:
         if self.estado != 'disponible':
             return False
             
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
 
         # 1. Chequear contra Alquileres activos (que no estén finalizados o cancelados)
@@ -120,7 +121,7 @@ class Vehiculo:
 
     @staticmethod
     def update(id_vehiculo, **fields):
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cur = conn.cursor()
 
         query_fields = [f"{k}=?" for k, v in fields.items() if v is not None]
@@ -143,23 +144,10 @@ class Vehiculo:
         finally:
             conn.close()
 
-    @staticmethod
-    def update_estado(id_vehiculo, nuevo_estado):
-        conn = database.get_db_connection()
-        cur = conn.cursor()
-        try:
-            cur.execute("UPDATE Vehiculos SET estado = ? WHERE id_vehiculo=?", (nuevo_estado, id_vehiculo))
-            conn.commit()
-            return True
-        except:
-            conn.rollback()
-            return False
-        finally:
-            conn.close()
 
     @staticmethod
     def delete(id_vehiculo):
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cur = conn.cursor()
         try:
             cur.execute("DELETE FROM Vehiculos WHERE id_vehiculo=?", (id_vehiculo,))

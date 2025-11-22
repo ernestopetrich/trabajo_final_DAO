@@ -7,6 +7,7 @@ import Clientes from "./pages/Clientes.jsx";
 import Vehiculos from "./pages/Vehiculos.jsx";
 import Alquileres from "./pages/Alquileres.jsx";
 import Inicio from "./pages/Inicio.jsx";
+import Empleados from "./pages/Empleados.jsx";
 
 
 
@@ -34,6 +35,9 @@ export default function App() {
           </NavLink>
           <NavLink to="/clientes" className="nav-item">
             Clientes
+          </NavLink>
+          <NavLink to="/empleados" className="nav-item">
+            Empleados
           </NavLink>
         </nav>
       </header>

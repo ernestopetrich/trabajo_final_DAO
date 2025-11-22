@@ -1,5 +1,5 @@
 import sqlite3
-import database
+from database import Database
 
 class Multa:
     def __init__(self, id_multa, id_alquiler, descripcion, monto, fecha_hora_multa, estado):
@@ -16,7 +16,7 @@ class Multa:
     @staticmethod
     def create(id_alquiler, descripcion, monto, fecha_hora_multa, estado='pendiente'):
         """Crea una nueva multa."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         try:
             cursor.execute(
@@ -34,19 +34,19 @@ class Multa:
     @staticmethod
     def get_by_id_alquiler(id_alquiler):
         """Obtiene una multa por su ID de alquiler."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Multas WHERE id_alquiler = ?", (id_alquiler,))
-        row = cursor.fetchone()
+        rows = cursor.fetchall()
         conn.close()
-        if row:
-            return Multa(*row)
+        if rows:
+            return [Multa(*row) for row in rows]
         return None
     
     @staticmethod
     def get_all():
         """Obtiene todas las multas."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Multas")
         rows = cursor.fetchall()
@@ -56,7 +56,7 @@ class Multa:
     @staticmethod
     def get_by_id(id_multa):
         """Obtiene una multa por su ID."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Multas WHERE id_multa = ?", (id_multa,))
         row = cursor.fetchone()

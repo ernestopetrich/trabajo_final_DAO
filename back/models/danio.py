@@ -1,5 +1,5 @@
 import sqlite3
-import database
+from database import Database
 
 class Danio:
     def __init__(self, id_danio, id_alquiler, descripcion, costo_reparacion, fecha_hora_reporte, estado):
@@ -16,7 +16,7 @@ class Danio:
     @staticmethod
     def create(id_alquiler, descripcion, costo_reparacion, fecha_hora_reporte, estado='pendiente'):
         """Crea un nuevo daño."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         try:
             cursor.execute(
@@ -27,6 +27,7 @@ class Danio:
             return Danio.get_by_id(cursor.lastrowid)
         except sqlite3.Error as e:
             print(f"Error al crear daño: {e}")
+            conn.rollback()
             return None
         finally:
             conn.close()
@@ -34,19 +35,19 @@ class Danio:
     @staticmethod
     def get_by_id_alquiler(id_alquiler):
         """Obtiene un daño por su ID de alquiler."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Danios WHERE id_alquiler = ?", (id_alquiler,))
-        row = cursor.fetchone()
+        rows = cursor.fetchall()
         conn.close()
-        if row:
-            return Danio(*row)
+        if rows:
+            return [Danio(*row) for row in rows]
         return None
     
     @staticmethod
     def get_all():
         """Obtiene todos los daños."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Danios")
         rows = cursor.fetchall()

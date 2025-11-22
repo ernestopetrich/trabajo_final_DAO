@@ -1,5 +1,5 @@
 import sqlite3
-import database
+from database import Database
 
 class Empleado:
     def __init__(self, id_empleado, tipo_dni, dni, nombre, apellido):
@@ -15,7 +15,7 @@ class Empleado:
     @staticmethod
     def create(tipo_dni, dni, nombre, apellido):
         """Crea un nuevo empleado en la BD."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         try:
             cursor.execute(
@@ -26,6 +26,7 @@ class Empleado:
             return Empleado.get_by_id(cursor.lastrowid)
         except sqlite3.IntegrityError as e:
             print(f"Error al crear empleado: {e}")
+            conn.rollback()
             return None
         finally:
             conn.close()
@@ -33,7 +34,7 @@ class Empleado:
     @staticmethod
     def get_all():
         """Obtiene todos los empleados."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Empleados")
         rows = cursor.fetchall()
@@ -43,7 +44,7 @@ class Empleado:
     @staticmethod
     def get_by_id(id_empleado):
         """Obtiene un empleado por su ID."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Empleados WHERE id_empleado = ?", (id_empleado,))
         row = cursor.fetchone()
@@ -55,7 +56,7 @@ class Empleado:
     @staticmethod
     def get_by_dni(dni):
         """Obtiene un empleado por su DNI."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Empleados WHERE dni = ?", (dni,))
         row = cursor.fetchone()

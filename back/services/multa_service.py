@@ -13,3 +13,7 @@ class MultaService:
     @staticmethod
     def get_all():
         return Multa.get_all()
+    
+    @staticmethod
+    def get_by_id_alquiler(id_alquiler):
+        return Multa.get_by_id_alquiler(id_alquiler)

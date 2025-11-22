@@ -17,7 +17,7 @@ def create_alquiler(data: AlquilerCreate):
         raise HTTPException(400, "No se pudo crear el alquiler")
     else:
         # Aquí podrías agregar lógica para crear una factura asociada al alquiler
-        factura_data = {
+        """factura_data = {
             "id_alquiler": alq.id_alquiler,
             "monto_total": alq.calcular_monto(),  # Suponiendo que existe este método
             "fecha_hora_emision": alq.fecha_hora_inicio
@@ -32,7 +32,7 @@ def create_alquiler(data: AlquilerCreate):
                 "id_factura": fac.id_factura,
                 "descripcion": f"Alquiler vehículo ID {alq.id_vehiculo}",
                 "monto": fac.monto_total
-            })
+            })"""
     return alq
     
 
@@ -56,12 +56,12 @@ def devolver_alquiler(id_alquiler: int):
         raise HTTPException(400, "No se pudo devolver el alquiler")
 
     # Actualizar factura asociada
-    factura = FacturaService.get_by_alquiler(id_alquiler)
+    """factura = FacturaService.get_by_alquiler(id_alquiler)
     if factura:
         FacturaService.update(factura.id_factura, {"estado_pago": "pagado"})
 
     # Cambiar estado del vehículo
-    VehiculoService.update(alq.id_vehiculo, { "estado": "disponible" })
+    VehiculoService.update(alq.id_vehiculo, { "estado": "disponible" })"""
 
     return alq
 

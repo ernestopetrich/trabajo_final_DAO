@@ -240,7 +240,7 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
                     <th onClick={()=>requestSort('clienteNombre')} style={{cursor:'pointer'}}>Cliente</th>
                     <th onClick={()=>requestSort('vehiculoNombre')} style={{cursor:'pointer'}}>Vehículo</th>
                     <th>Fechas</th>
-                    <th>Precio Est.</th>
+                    <th>Precio</th>
                     <th onClick={()=>requestSort('estado')} style={{cursor:'pointer'}}>Estado {getClassNamesFor('estado') === 'asc' ? '▲' : '▼'}</th>
                     <th>Acciones</th>
                 </tr>
@@ -252,12 +252,12 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
                         <td>{a.clienteNombre}</td>
                         <td>{a.vehiculoNombre}</td>
                         <td style={{fontSize: '0.85rem', minWidth: '160px'}}>
-                            <div><strong>In:</strong> {format(a.fecha_hora_inicio)}</div>
+                            <div><strong>Inicio:</strong> {format(a.fecha_hora_inicio)}</div>
                             <div style={{color: '#666'}}><strong>Fin:</strong> {format(a.fecha_hora_fin_prevista)}</div>
-                            {a.fecha_hora_fin_real && <div style={{color: '#166534', marginTop:'2px'}}><strong>Real:</strong> {format(a.fecha_hora_fin_real)}</div>}
+                            {a.fecha_hora_fin_real && <div style={{color: '#166534', marginTop:'2px'}}><strong>Fin Real:</strong> {format(a.fecha_hora_fin_real)}</div>}
                         </td>
                         <td>
-                            ${a.precioTotal.toLocaleString("es-AR")}
+                            {a.costo_total ? `$${a.costo_total.toLocaleString("es-AR")}` : `${a.precioTotal.toLocaleString("es-AR")}`}
                             <div style={{fontSize:'0.75rem', color:'#666'}}>({a.diasCobrados} días)</div>
                         </td>
                         <td>

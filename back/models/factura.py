@@ -1,5 +1,5 @@
 import sqlite3
-import database
+from database import Database
 
 class Factura:
     def __init__(self, id_factura, id_alquiler, fecha_hora_emision, monto_total, estado_pago):
@@ -15,7 +15,7 @@ class Factura:
     @staticmethod
     def create(id_alquiler, fecha_hora_emision, monto_total, estado_pago='pendiente'):
         """Crea una nueva factura."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         try:
             cursor.execute(
@@ -26,6 +26,7 @@ class Factura:
             return Factura.get_by_id(cursor.lastrowid)
         except sqlite3.Error as e:
             print(f"Error al crear factura: {e}")
+            conn.rollback()
             return None
         finally:
             conn.close()
@@ -33,7 +34,7 @@ class Factura:
     @staticmethod
     def get_by_id(id_factura):
         """Obtiene una factura por su ID."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Facturas WHERE id_factura = ?", (id_factura,))
         row = cursor.fetchone()
@@ -45,7 +46,7 @@ class Factura:
     @staticmethod
     def get_by_alquiler(id_alquiler):
         """Obtiene una factura por el ID de alquiler."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Facturas WHERE id_alquiler = ?", (id_alquiler,))
         row = cursor.fetchone()
@@ -57,7 +58,7 @@ class Factura:
     @staticmethod
     def get_all():
         """Obtiene todas las facturas."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Facturas")
         rows = cursor.fetchall()
@@ -67,7 +68,7 @@ class Factura:
     @staticmethod
     def update(id_factura, data):
         """Actualiza una factura existente."""
-        conn = database.get_db_connection()
+        conn = Database().get_connection()
         cursor = conn.cursor()
         fields = []
         values = []
@@ -82,6 +83,7 @@ class Factura:
             return Factura.get_by_id(id_factura)
         except sqlite3.Error as e:
             print(f"Error al actualizar factura: {e}")
+            conn.rollback()
             return None
         finally:
             conn.close()
