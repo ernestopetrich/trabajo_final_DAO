@@ -5,6 +5,7 @@ class EmpleadoBase(BaseModel):
     dni: str
     nombre: str
     apellido: str
+    activo: bool = True
 
 class EmpleadoCreate(EmpleadoBase):
     pass

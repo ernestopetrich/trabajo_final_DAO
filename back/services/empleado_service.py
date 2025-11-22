@@ -17,3 +17,7 @@ class EmpleadoService:
     @staticmethod
     def get_by_dni(dni):
         return Empleado.get_by_dni(dni)
+    
+    @staticmethod
+    def update(id_empleado, data):
+        return Empleado.update(id_empleado, **data)

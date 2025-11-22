@@ -49,6 +49,9 @@ export const deleteAlquiler = (id) => API.post(`/alquileres/${id}/delete`);
 export const updateAlquiler = (id, payload) => API.put(`/alquileres/${id}`, payload);
 
 // Empleados
+export const createEmpleado = (payload) => API.post("/empleados/", payload);
+export const updateEmpleado = (id, payload) => API.put(`/empleados/${id}`, payload);
+export const deleteEmpleado = (id) => API.put(`/empleados/${id}/delete`);
 export const getEmpleados = () => API.get("/empleados/");
 
 // Incidentes

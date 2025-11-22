@@ -59,7 +59,8 @@ class Database:
             tipo_dni TEXT NOT NULL,
             dni TEXT NOT NULL UNIQUE,
             nombre TEXT NOT NULL,
-            apellido TEXT NOT NULL
+            apellido TEXT NOT NULL,
+            activo BOOLEAN NOT NULL DEFAULT 1
         );
         """)
 

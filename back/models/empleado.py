@@ -2,12 +2,13 @@ import sqlite3
 from database import Database
 
 class Empleado:
-    def __init__(self, id_empleado, tipo_dni, dni, nombre, apellido):
+    def __init__(self, id_empleado, tipo_dni, dni, nombre, apellido, activo=1):
         self.id_empleado = id_empleado
         self.tipo_dni = tipo_dni
         self.dni = dni
         self.nombre = nombre
         self.apellido = apellido
+        self.activo = activo
 
     def __repr__(self):
         return f"<Empleado {self.nombre} {self.apellido} (DNI: {self.dni})>"
@@ -19,7 +20,7 @@ class Empleado:
         cursor = conn.cursor()
         try:
             cursor.execute(
-                "INSERT INTO Empleados (tipo_dni, dni, nombre, apellido) VALUES (?, ?, ?, ?)",
+                "INSERT INTO Empleados (tipo_dni, dni, nombre, apellido, activo) VALUES (?, ?, ?, ?, 1)",
                 (tipo_dni, dni, nombre, apellido)
             )
             conn.commit()
@@ -64,4 +65,33 @@ class Empleado:
         if row:
             return Empleado(*row)
         return None
+    
+    @staticmethod
+    def update(id_empleado, **fields):
+        """Actualiza un empleado existente."""
+        conn = Database().get_connection()
+        cursor = conn.cursor()
+
+        # Filtrar campos válidos (evita columnas inexistentes)
+        valid_fields = {k: v for k, v in fields.items() if v is not None}
+
+        if not valid_fields:
+            conn.close()
+            return Empleado.get_by_id(id_empleado)
+
+        query_fields = [f"{k}=?" for k in valid_fields.keys()]
+        query = f"UPDATE Empleados SET {', '.join(query_fields)} WHERE id_empleado = ?"
+        values = list(valid_fields.values()) + [id_empleado]
+        print(query_fields)
+        print(values)
+        try:
+            cursor.execute(query, values)
+            conn.commit()
+            return Empleado.get_by_id(id_empleado)
+        except sqlite3.Error as e:
+            print(f"Error al actualizar empleado: {e}")
+            conn.rollback()
+            return None
+        finally:
+            conn.close()
 

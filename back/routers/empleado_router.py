@@ -15,3 +15,11 @@ def get_empleados():
 @router.get("/{id_empleado}", response_model=EmpleadoResponse)
 def get_empleado(id_empleado: int):
     return EmpleadoService.get_by_id(id_empleado)
+
+@router.put("/{id_empleado}", response_model=EmpleadoResponse)
+def update_empleado(id_empleado: int, data: EmpleadoCreate):
+    return EmpleadoService.update(id_empleado, data.dict())
+
+@router.put("/{id_empleado}/delete")
+def delete_empleado(id_empleado: int):
+    return EmpleadoService.update(id_empleado, {"activo": False})

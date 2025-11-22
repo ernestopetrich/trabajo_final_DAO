@@ -48,6 +48,7 @@ export default function Vehiculos(){
                 onCancel={() => setEditingVehiculo(null)} // Botón cancelar cierra el modal
             />
           </div>
+          <hr/>
         </div>
       )}
 
