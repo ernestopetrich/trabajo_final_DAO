@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 
-export default function AlquilerList({ items = [], vehiculos = [], clientes = [], onDevolver, onDelete, onEdit, onStateChange }) {
+export default function AlquilerList({ items = [], vehiculos = [], clientes = [], onDevolver, onDelete, onEdit, onStateChange, onViewFactura }) {
   
   // 1. Estados
   const [searchTerm, setSearchTerm] = useState("");
@@ -121,6 +121,19 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
 
     return (
       <div style={{display: 'flex', gap: '5px'}}>
+
+
+        {/* BOTÓN FACTURA (NUEVO) - Visible siempre que no sea borrador/eliminado */}
+        {onViewFactura && s === 'finalizado' && (
+            <button 
+                style={{...btnBase, backgroundColor: '#64748b', display: 'flex', alignItems: 'center', gap: '4px'}} 
+                onClick={() => onViewFactura(alquiler)}
+                title="Ver Factura"
+            >
+                📄
+            </button>
+        )}
+
         
         {/* Pendiente -> Confirmado */}
         {s === 'pendiente' && onStateChange && (

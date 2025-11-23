@@ -1,7 +1,8 @@
 import React, {useEffect, useState} from "react";
 import AlquilerForm from "../components/AlquilerForm";
 import AlquilerList from "../components/AlquilerList";
-import DevolucionWizard from "../components/DevolucionWizard"; // <--- 1. Importamos el Wizard
+import DevolucionWizard from "../components/DevolucionWizard"; 
+import FacturaViewer from "../components/FacturaViewer"; 
 
 // Agregamos getEmpleados a los imports
 import { getAlquileres, createAlquiler, deleteAlquiler, getVehiculos, getClientes, getEmpleados, updateAlquiler, devolverAlquiler } from "../api/api";
@@ -16,6 +17,7 @@ export default function Alquileres(){
 
   // <--- 2. Estado para controlar el Wizard (si no es null, se muestra)
   const [returningAlquilerId, setReturningAlquilerId] = useState(null);
+  const [facturaAlquiler, setFacturaAlquiler] = useState(null); // Estado para la factura
 
   async function load(){
     // Cargamos todo en paralelo, incluyendo empleados
@@ -114,6 +116,14 @@ export default function Alquileres(){
             alquilerId={returningAlquilerId}
             onFinish={finalizarDevolucion}
             onCancel={() => setReturningAlquilerId(null)}
+        />
+      )}
+
+      {/* NUEVO: Modal Factura */}
+      {facturaAlquiler && (
+        <FacturaViewer 
+            alquiler={facturaAlquiler} 
+            onClose={() => setFacturaAlquiler(null)} 
         />
       )}
 
