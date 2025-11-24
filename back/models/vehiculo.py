@@ -111,13 +111,13 @@ class Vehiculo:
             conn.close()
             return False 
 
-        # 3. Chequear conflicto con Reservas PENDIENTES o CONFIRMADAS
+        # 3. Chequear conflicto con Alquileres PENDIENTES o CONFIRMADAS
         cursor.execute(
             """
-            SELECT COUNT(*) FROM Reservas
+            SELECT COUNT(*) FROM Alquileres
             WHERE id_vehiculo = ?
             AND estado IN ('pendiente', 'confirmada')
-            AND (fecha_inicio < ? AND fecha_fin > ?)
+            AND (fecha_hora_inicio < ? AND fecha_hora_fin_prevista > ?)
             """,
             (self.id_vehiculo, fecha_fin, fecha_inicio)
         )

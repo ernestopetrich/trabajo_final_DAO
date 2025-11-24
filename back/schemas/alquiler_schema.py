@@ -15,3 +15,7 @@ class AlquilerResponse(AlquilerBase):
     fecha_hora_fin_real: str | None = None
     costo_total: float | None = None
     estado: str
+
+class AlquilerCreateResponse(AlquilerBase):
+    descripcion: str
+    id_alquiler: int

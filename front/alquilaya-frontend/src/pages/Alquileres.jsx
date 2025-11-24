@@ -4,7 +4,7 @@ import AlquilerList from "../components/AlquilerList";
 import DevolucionWizard from "../components/DevolucionWizard"; // Para devolver
 import FacturaViewer from "../components/FacturaViewer";       // Para ver factura
 
-import { getAlquileres, createAlquiler, deleteAlquiler, getVehiculos, getClientes, getEmpleados, updateAlquiler, devolverAlquiler } from "../api/api";
+import { getAlquileres, createAlquiler, deleteAlquiler, getVehiculos, getClientes, getEmpleados, updateAlquiler, devolverAlquiler, confirmarAlquiler, iniciarAlquiler } from "../api/api";
 
 export default function Alquileres(){
   const [alquileres, setAlquileres] = useState([]);
@@ -42,7 +42,13 @@ export default function Alquileres(){
   }
 
   async function handleStateChange(id, nuevoEstado){
-    await updateAlquiler(id, { estado: nuevoEstado });
+
+    if (nuevoEstado === 'confirmado') {
+      await confirmarAlquiler(id);
+    }
+    else if (nuevoEstado === 'activo') {
+      await iniciarAlquiler(id);
+    }
     load();
   }
 

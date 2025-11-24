@@ -144,7 +144,15 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
 
         {/* Confirmado -> Activo */}
         {(s === 'confirmado' || s === 'confirmada') && onStateChange && (
-            <button style={{...btnBase, backgroundColor: '#10B981'}} onClick={() => onStateChange(id, 'activo')} title="Entregar Llaves">
+            <button style={{...btnBase, backgroundColor: '#10B981'}} onClick={() => {
+              if (alquiler.fecha_hora_inicio >= new Date().toISOString()) {
+                alert("La fecha de inicio del alquiler no puede ser en el futuro.");
+                return;
+              }
+              else {
+              onStateChange(id, 'activo')
+              }
+            }} title="Entregar Llaves">
                 🔑 Entregar
             </button>
         )}

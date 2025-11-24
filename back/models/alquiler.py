@@ -2,6 +2,7 @@ import sqlite3
 from database import Database
 from datetime import datetime, timedelta
 from math import ceil 
+from services.vehiculo_service import VehiculoService
 
 # Importamos todas las clases de estado
 from models.state_alquiler import (
@@ -68,8 +69,8 @@ class Alquiler:
     def devolver(self):
         return self.state.devolver(self)
 
-    def cancelar(self):
-        return self.state.cancelar(self)
+    def eliminar(self):
+        return self.state.eliminar(self)
 
     # --- MÉTODOS INTERNOS PARA EL STATE ---
     
@@ -174,14 +175,20 @@ class Alquiler:
         conn = Database().get_connection()
         cursor = conn.cursor()
         try:
+
             estado_inicial = 'pendiente' 
             
+            vehiculo = VehiculoService.get_by_id(id_vehiculo)
+
+            if vehiculo.is_available(fecha_hora_inicio, fecha_hora_fin_prevista) == False:
+                print("Error: El vehículo no está disponible en las fechas solicitadas.")
+                return 'Vehiculo: {vehiculo.patente} No disponible'
+
             cursor.execute(
                 "INSERT INTO Alquileres (id_cliente, id_vehiculo, id_empleado, fecha_hora_inicio, fecha_hora_fin_prevista, estado) VALUES (?, ?, ?, ?, ?, ?)",
                 (id_cliente, id_vehiculo, id_empleado, fecha_hora_inicio, fecha_hora_fin_prevista, estado_inicial)
             )
             id_alquiler = cursor.lastrowid
-            cursor.execute("UPDATE Vehiculos SET estado = 'alquilado' WHERE id_vehiculo = ?", (id_vehiculo,))
             conn.commit()
             return Alquiler.get_by_id(id_alquiler)
         except sqlite3.Error as e:

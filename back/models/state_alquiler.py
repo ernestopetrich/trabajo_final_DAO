@@ -31,20 +31,24 @@ class EstadoPendiente(EstadoAlquiler):
         alquiler.set_estado("confirmado")
         return "Alquiler confirmado exitosamente."
     
-    def cancelar(self, alquiler):
-        alquiler.set_estado("cancelado")
-        return "Alquiler cancelado."
+    def eliminar(self, alquiler):
+        alquiler.set_estado("eliminado")
+        return "Alquiler dado de baja."
 
 class EstadoConfirmado(EstadoAlquiler):
     def iniciar(self, alquiler):
+        if datetime.fromisoformat(alquiler.fecha_hora_inicio) > datetime.now():
+            raise ValueError("No se puede iniciar el alquiler antes de la fecha y hora de inicio programada.")
         alquiler.set_estado("activo")
         return "Alquiler iniciado. El vehículo está en uso."
     
-    def cancelar(self, alquiler):
-        alquiler.set_estado("cancelado")
-        return "Reserva confirmada ha sido cancelada."
+    def eliminar(self, alquiler):
+        alquiler.set_estado("eliminado")
+        return "Reserva confirmada ha sido dada de baja."
 
 class EstadoActivo(EstadoAlquiler):
+    def eliminar(self, alquiler):
+        raise ValueError("No se puede eliminar un alquiler activo. Debe ser finalizado primero.")
     def devolver(self, alquiler):
         # 1. Establecer la fecha de fin real (AHORA)
         ahora_iso = datetime.now().isoformat()

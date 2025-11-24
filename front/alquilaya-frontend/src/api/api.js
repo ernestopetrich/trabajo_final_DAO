@@ -44,6 +44,9 @@ export const deleteVehiculo = (id) => API.delete(`/vehiculos/${id}`);
 // Alquileres
 export const getAlquileres = () => API.get("/alquileres/");
 export const createAlquiler = (payload) => API.post("/alquileres/", payload);
+// ESTADOS
+export const confirmarAlquiler = (id) => API.post(`/alquileres/${id}/confirmar`);
+export const iniciarAlquiler = (id) => API.post(`/alquileres/${id}/iniciar`);
 export const devolverAlquiler = (id) => API.post(`/alquileres/${id}/devolver`);
 export const deleteAlquiler = (id) => API.post(`/alquileres/${id}/delete`);
 export const updateAlquiler = (id, payload) => API.put(`/alquileres/${id}`, payload);

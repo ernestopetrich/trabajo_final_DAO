@@ -1,5 +1,4 @@
 from models.alquiler import Alquiler
-from services.vehiculo_service import VehiculoService
 
 class AlquilerService:
 
@@ -28,14 +27,25 @@ class AlquilerService:
         return alquiler_actualizado
     
     @staticmethod
+    def confirmar(id_alquiler):
+        alquiler = Alquiler.get_by_id(id_alquiler)
+        if not alquiler:
+            return None
+        
+        alquiler.confirmar()
+
+        alquiler_actualizado = Alquiler.get_by_id(id_alquiler)
+
+        return alquiler_actualizado 
+    
+    @staticmethod
     def delete(id_alquiler):
         alquiler = Alquiler.get_by_id(id_alquiler)
         if not alquiler:
             return False
-        rtn = alquiler.update_estado("eliminado")
-        vehiculo = alquiler.id_vehiculo
-        VehiculoService.update(vehiculo, {"estado": "disponible"})
-        return rtn
+        alquiler.eliminar()
+        alq = Alquiler.get_by_id(id_alquiler)
+        return alq
     
     @staticmethod
     def update(id_alquiler, data):
