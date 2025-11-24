@@ -66,12 +66,13 @@ class EstadoActivo(EstadoAlquiler):
                                         })
 
         vehiculo = VehiculoService.get_by_id(alquiler.id_vehiculo)
+        precio_diario = vehiculo.precio_diario
 
         detalle = DetalleFacturaService.create({
             "id_factura": factura.id_factura,
             "descripcion": f"Alquiler vehículo {vehiculo.marca} {vehiculo.nombre} {vehiculo.modelo} ({vehiculo.patente})",
             "cantidad": cantidad_dias,
-            "monto": costo
+            "monto": precio_diario
         })
 
         multas = MultaService.get_by_id_alquiler(alquiler.id_alquiler)
