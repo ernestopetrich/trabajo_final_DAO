@@ -54,6 +54,17 @@ class Vehiculo:
         if row:
             return Vehiculo(*row)
         return None
+        
+    @staticmethod
+    def get_by_patente(patente):
+        conn = Database().get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Vehiculos WHERE patente = ?", (patente,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return Vehiculo(*row)
+        return None
 
     def update_estado(self, nuevo_estado):
         """Actualiza el estado del vehículo (ej. 'disponible', 'alquilado')."""
@@ -68,55 +79,55 @@ class Vehiculo:
     def is_available(self, fecha_inicio, fecha_fin):
         """
         Verifica la disponibilidad del vehículo en un rango de fechas.
-        Debe chequear contra Alquileres activos y Reservas confirmadas.
-        Esta es la lógica clave de tu sistema.
+        Permite reservar a futuro aunque el auto esté alquilado hoy.
+        Bloquea solo si hay solapamiento de fechas.
         """
-        if self.estado != 'disponible':
+        # 1. Bloqueo físico real: Si está roto o dado de baja, no se puede usar nunca.
+        # (Quitamos el bloqueo por 'alquilado' o 'reservado', eso lo chequean las fechas)
+        if self.estado in ['mantenimiento', 'baja', 'inactivo', 'eliminado']:
             return False
             
         conn = Database().get_connection()
         cursor = conn.cursor()
 
-        # 1. Chequear contra Alquileres activos (que no estén finalizados o cancelados)
-        # Un vehículo está ocupado si un alquiler existente se solapa con las fechas solicitadas.
-        # Solapamiento: (InicioAlquiler < FinSolicitud) AND (FinAlquiler > InicioSolicitud)
+        # Lógica de Superposición (Overlap):
+        # Existe conflicto si: (InicioSolicitado < FinExistente) AND (FinSolicitado > InicioExistente)
+        # Esta fórmula cubre todos los casos: cruces parciales, totales o que uno esté dentro del otro.
+
+        # 2. Chequear conflicto con Alquileres ACTIVOS
         cursor.execute(
             """
             SELECT COUNT(*) FROM Alquileres
             WHERE id_vehiculo = ?
             AND estado = 'activo'
-            AND (
-                (fecha_hora_inicio < ? AND fecha_hora_fin_prevista > ?) OR -- Se solapa
-                (fecha_hora_inicio BETWEEN ? AND ?) OR -- Comienza dentro
-                (fecha_hora_fin_prevista BETWEEN ? AND ?) -- Termina dentro
-            )
+            AND (fecha_hora_inicio < ? AND fecha_hora_fin_prevista > ?)
             """,
-            (self.id_vehiculo, fecha_fin, fecha_inicio, fecha_inicio, fecha_fin, fecha_inicio, fecha_fin)
+            (self.id_vehiculo, fecha_fin, fecha_inicio)
         )
         alquileres_count = cursor.fetchone()[0]
-        print("cantidad de alquileres del vehiculo",alquileres_count)
+        
         if alquileres_count > 0:
+            print(f"Vehículo {self.patente} ocupado por {alquileres_count} alquiler(es) en esas fechas.")
             conn.close()
-            return False # Ocupado por un alquiler
+            return False 
 
-        # 2. Chequear contra Reservas (que estén pendientes o confirmadas)
+        # 3. Chequear conflicto con Reservas PENDIENTES o CONFIRMADAS
         cursor.execute(
             """
             SELECT COUNT(*) FROM Reservas
             WHERE id_vehiculo = ?
-            AND (estado = 'pendiente' OR estado = 'confirmada')
-            AND (
-                (fecha_inicio < ? AND fecha_fin > ?) OR
-                (fecha_inicio BETWEEN ? AND ?) OR
-                (fecha_fin BETWEEN ? AND ?)
-            )
+            AND estado IN ('pendiente', 'confirmada')
+            AND (fecha_inicio < ? AND fecha_fin > ?)
             """,
-            (self.id_vehiculo, fecha_fin, fecha_inicio, fecha_inicio, fecha_fin, fecha_inicio, fecha_fin)
+            (self.id_vehiculo, fecha_fin, fecha_inicio)
         )
         reservas_count = cursor.fetchone()[0]
-        print("cantidad de reservas del vehiculo", reservas_count)
+        
+        if reservas_count > 0:
+            print(f"Vehículo {self.patente} ocupado por {reservas_count} reserva(s) en esas fechas.")
+        
         conn.close()
-        return reservas_count == 0 # True si no hay alquileres NI reservas
+        return reservas_count == 0 
 
 
     @staticmethod
@@ -131,9 +142,7 @@ class Vehiculo:
             return Vehiculo.get_by_id(id_vehiculo)
 
         params.append(id_vehiculo)
-        print("Query fields:", query_fields)
-        print("Updating Vehiculo with params:", params)
-
+        
         try:
             cur.execute(f"UPDATE Vehiculos SET {', '.join(query_fields)} WHERE id_vehiculo=?", params)
             conn.commit()

@@ -171,7 +171,7 @@ export default function AlquilerForm({ onSubmit, clientes = [], vehiculos = [], 
 
           return (
             <option key={v.id_vehiculo} value={v.id_vehiculo}>
-              {v.patente} — {v.marca} {v.modelo} (${v.precio_diario}/día)
+              {v.patente} — {v.marca} {v.nombre} {v.modelo} (${v.precio_diario}/día)
             </option>
           );
         })}

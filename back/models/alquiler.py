@@ -174,7 +174,7 @@ class Alquiler:
         conn = Database().get_connection()
         cursor = conn.cursor()
         try:
-            estado_inicial = 'activo' 
+            estado_inicial = 'pendiente' 
             
             cursor.execute(
                 "INSERT INTO Alquileres (id_cliente, id_vehiculo, id_empleado, fecha_hora_inicio, fecha_hora_fin_prevista, estado) VALUES (?, ?, ?, ?, ?, ?)",
