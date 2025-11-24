@@ -1,26 +1,26 @@
 import React, {useEffect, useState} from "react";
 import AlquilerForm from "../components/AlquilerForm";
 import AlquilerList from "../components/AlquilerList";
-import DevolucionWizard from "../components/DevolucionWizard"; 
-import FacturaViewer from "../components/FacturaViewer"; 
+import DevolucionWizard from "../components/DevolucionWizard"; // Para devolver
+import FacturaViewer from "../components/FacturaViewer";       // Para ver factura
 
-// Agregamos getEmpleados a los imports
 import { getAlquileres, createAlquiler, deleteAlquiler, getVehiculos, getClientes, getEmpleados, updateAlquiler, devolverAlquiler } from "../api/api";
 
 export default function Alquileres(){
   const [alquileres, setAlquileres] = useState([]);
   const [vehiculos, setVehiculos] = useState([]);
   const [clientes, setClientes] = useState([]);
-  const [empleados, setEmpleados] = useState([]); 
+  const [empleados, setEmpleados] = useState([]);
   
   const [editingAlquiler, setEditingAlquiler] = useState(null);
-
-  // <--- 2. Estado para controlar el Wizard (si no es null, se muestra)
+  
+  // ESTADO 1: Control del Wizard de Devolución
   const [returningAlquilerId, setReturningAlquilerId] = useState(null);
-  const [facturaAlquiler, setFacturaAlquiler] = useState(null); // Estado para la factura
+
+  // ESTADO 2: Control del Visor de Factura (¡Esto faltaba!)
+  const [facturaAlquiler, setFacturaAlquiler] = useState(null);
 
   async function load(){
-    // Cargamos todo en paralelo, incluyendo empleados
     const [a, v, c, e] = await Promise.all([
         getAlquileres(), 
         getVehiculos(), 
@@ -35,48 +35,38 @@ export default function Alquileres(){
 
   useEffect(()=>{ load(); }, []);
 
-  // CREAR
+  // --- ACCIONES ---
   async function handleCreate(form){
-    await createAlquiler({
-        ...form,
-        estado: 'pendiente' 
-    });
+    await createAlquiler({ ...form, estado: 'pendiente' });
     load();
   }
 
-  // CAMBIAR ESTADO
   async function handleStateChange(id, nuevoEstado){
     await updateAlquiler(id, { estado: nuevoEstado });
     load();
   }
 
-  // EDITAR
   async function handleUpdate(formData){
     await updateAlquiler(editingAlquiler.id_alquiler, formData);
     setEditingAlquiler(null);
     load();
   }
 
-  // ELIMINAR
   async function handleDelete(id){
     await deleteAlquiler(id);
     load();
   }
 
-  // <--- 3. Lógica del Wizard ---
-  
-  // Esta función se activa al tocar "Devolver" en la lista
+  // --- LÓGICA WIZARD (Devolución) ---
   function iniciarDevolucion(id){
-    setReturningAlquilerId(id); // Abre el wizard guardando el ID
+    setReturningAlquilerId(id);
   }
 
-  // Esta función se ejecuta cuando el Wizard termina de guardar daños/multas
   async function finalizarDevolucion(){
     if (returningAlquilerId) {
-        // Marcamos como finalizado en el backend
-        await devolverAlquiler(returningAlquilerId); 
-        setReturningAlquilerId(null); // Cerramos el wizard
-        load(); // Recargamos la lista
+        await devolverAlquiler(returningAlquilerId);
+        setReturningAlquilerId(null);
+        load();
     }
   }
 
@@ -84,17 +74,15 @@ export default function Alquileres(){
     <div className="page">
       <h2>Gestión de Alquileres</h2>
       
-      {/* Formulario de Creación */}
       <AlquilerForm 
         onSubmit={handleCreate} 
         clientes={clientes} 
-        vehiculos={vehiculos}
+        vehiculos={vehiculos} 
         empleados={empleados} 
       />
-      
       <hr/>
 
-      {/* Modal de Edición */}
+      {/* 1. Modal Edición */}
       {editingAlquiler && (
         <div className="modal-overlay">
             <div className="modal-content">
@@ -110,7 +98,7 @@ export default function Alquileres(){
         </div>
       )}
 
-      {/* <--- 4. Renderizado del Wizard --- */}
+      {/* 2. Modal Wizard Devolución */}
       {returningAlquilerId && (
         <DevolucionWizard 
             alquilerId={returningAlquilerId}
@@ -119,7 +107,7 @@ export default function Alquileres(){
         />
       )}
 
-      {/* NUEVO: Modal Factura */}
+      {/* 3. Modal Factura (¡Esto faltaba integrar!) */}
       {facturaAlquiler && (
         <FacturaViewer 
             alquiler={facturaAlquiler} 
@@ -133,9 +121,10 @@ export default function Alquileres(){
         vehiculos={vehiculos}
         clientes={clientes}
         onStateChange={handleStateChange}
-        onDevolver={iniciarDevolucion} // <--- Pasamos iniciarDevolucion en vez de handleDevolver directo
+        onDevolver={iniciarDevolucion}
         onDelete={handleDelete}
         onEdit={setEditingAlquiler}
+        onViewFactura={setFacturaAlquiler} // <--- ¡CRUCIAL! Pasar la función aquí
       />
     </div>
   );

@@ -164,7 +164,7 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
         )}
 
         {/* Eliminar */}
-        {onDelete && s !== 'eliminado' && s !== 'cancelado' && (
+        {onDelete && s !== 'eliminado' && s !== 'cancelado' && s !== 'finalizado' && (
             <button style={{...btnBase, backgroundColor: '#EF4444'}} onClick={() => { if(window.confirm("¿Eliminar alquiler?")) onDelete(id); }}>
                 ✕
             </button>

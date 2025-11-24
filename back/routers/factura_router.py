@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from schemas.factura_schema import FacturaCreate, FacturaResponse
+from schemas.factura_schema import FacturaCreate, FacturaResponse, FacturaResponseAlquiler
 from services.factura_service import FacturaService
 
 router = APIRouter(prefix="/facturas", tags=["Facturas"])
@@ -15,3 +15,7 @@ def get_facturas():
 @router.get("/{id_factura}", response_model=FacturaResponse)
 def get_factura(id_factura: int):
     return FacturaService.get_by_id(id_factura)
+
+@router.get("/alquiler/{id_alquiler}", response_model=FacturaResponseAlquiler)
+def get_factura_by_alquiler(id_alquiler: int):
+    return FacturaService.get_by_alquiler(id_alquiler)

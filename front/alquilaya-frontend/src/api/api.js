@@ -57,5 +57,10 @@ export const getEmpleados = () => API.get("/empleados/");
 // Incidentes
 export const createDanio = (payload) => API.post("/danios/", payload);
 export const createMulta = (payload) => API.post("/multas/", payload);
+export const getDanios = () => API.get("/danios/");
+export const getMultas = () => API.get("/multas/");
+
+// Facturas
+export const getFacturaByAlquiler = (id_alquiler) => API.get(`/facturas/alquiler/${id_alquiler}`);
 
 

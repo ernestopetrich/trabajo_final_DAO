@@ -95,6 +95,23 @@ class Alquiler:
         conn.commit()
         conn.close()
 
+    def calcular_dias_alquiler(self):
+        """Calcula la cantidad de días del alquiler."""
+        inicio = datetime.fromisoformat(self.fecha_hora_inicio)
+        
+        if self.fecha_hora_fin_real:
+            fin = datetime.fromisoformat(self.fecha_hora_fin_real)
+        else:
+            fin = datetime.now() 
+        
+        diferencia = fin - inicio
+        dias_a_cobrar = ceil(diferencia.total_seconds() / 86400) 
+        
+        if dias_a_cobrar < 1:
+            dias_a_cobrar = 1
+            
+        return dias_a_cobrar
+
     # --- CÁLCULO DE COSTOS (ACTUALIZADO CON MULTAS Y DAÑOS) ---
     def calcular_y_guardar_costo(self):
         """
@@ -116,18 +133,7 @@ class Alquiler:
         precio_diario = row['precio_diario']
         
         # 2. Calcular duración y costo base
-        inicio = datetime.fromisoformat(self.fecha_hora_inicio)
-        
-        if self.fecha_hora_fin_real:
-            fin = datetime.fromisoformat(self.fecha_hora_fin_real)
-        else:
-            fin = datetime.now() 
-        
-        diferencia = fin - inicio
-        dias_a_cobrar = ceil(diferencia.total_seconds() / 86400) 
-        
-        if dias_a_cobrar < 1:
-            dias_a_cobrar = 1
+        dias_a_cobrar = self.calcular_dias_alquiler()
             
         costo_base = dias_a_cobrar * precio_diario
         

@@ -1,16 +1,14 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class DetalleFacturaBase(BaseModel):
     id_detalle: int
     id_factura: int
     monto: float
+    cantidad: int
     descripcion: str
 
-class DetalleFacturaCreate(FacturaBase):
+class DetalleFacturaCreate(DetalleFacturaBase):
     pass
 
-class DetalleFacturaResponse(FacturaBase):
-    id_factura: int
-    id_detalle: int
-    monto: float
-    descripcion: str
+class DetalleFacturaResponse(DetalleFacturaBase):
+    model_config = ConfigDict(from_attributes=True)

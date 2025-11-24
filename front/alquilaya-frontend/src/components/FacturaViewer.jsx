@@ -1,128 +1,162 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+// CORRECCIÓN: Agregamos .js explícitamente para resolver el error de importación
+import { getFacturaByAlquiler } from "../api/api.js"; 
 
 export default function FacturaViewer({ alquiler, onClose }) {
+  const [factura, setFactura] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!alquiler) return;
+
+    async function fetchFactura() {
+      try {
+        setLoading(true);
+        // El backend devuelve el JSON con la estructura completa
+        const res = await getFacturaByAlquiler(alquiler.id_alquiler);
+        setFactura(res.data);
+      } catch (err) {
+        console.error("Error obteniendo factura:", err);
+        setError("No se pudo cargar la factura. Verifique que el alquiler esté finalizado.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchFactura();
+  }, [alquiler]);
+
   if (!alquiler) return null;
 
-  // Cálculos auxiliares
-  const dias = alquiler.diasCobrados || 0;
-  const precioUnitario = alquiler.precioTotal / (dias || 1);
-  const subtotal = alquiler.precioTotal;
-  const impuestos = subtotal * 0.21; // Ejemplo IVA 21%
-  const total = subtotal + impuestos;
-
-  // Función para imprimir
-  const handlePrint = () => {
-    window.print();
+  // --- Estilos Modal Centrado ---
+  const overlayStyle = {
+    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center',
+    zIndex: 2000, backdropFilter: 'blur(3px)'
   };
 
-  // Estilos Inline para la "Hoja" de factura
-  const sheetStyle = {
-    backgroundColor: 'white',
-    padding: '40px',
-    borderRadius: '4px',
-    boxShadow: '0 0 15px rgba(0,0,0,0.15)',
-    maxWidth: '800px',
-    width: '100%',
-    margin: '0 auto',
-    color: '#333',
-    fontFamily: 'Helvetica, Arial, sans-serif'
+  const modalStyle = {
+    backgroundColor: 'white', width: '100%', maxWidth: '800px', maxHeight: '90vh',
+    overflowY: 'auto', borderRadius: '8px', boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
+    padding: '40px', position: 'relative'
   };
 
   return (
-    <div className="modal-overlay" style={{zIndex: 2000}}>
-      <div style={{width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '20px'}}>
+    <div style={overlayStyle} className="modal-overlay">
+      <div style={modalStyle} className="factura-sheet">
         
-        <div style={sheetStyle} className="factura-sheet">
-          
-          {/* Encabezado */}
-          <div style={{borderBottom: '2px solid #333', paddingBottom: '20px', marginBottom: '30px', display: 'flex', justifyContent: 'space-between'}}>
-            <div>
-                <h1 style={{margin: 0, fontSize: '2rem'}}>ALQUILAYA</h1>
-                <p style={{margin: '5px 0 0 0', fontSize: '0.9rem', color: '#666'}}>Servicios de Movilidad S.A.</p>
-            </div>
-            <div style={{textAlign: 'right'}}>
-                <h2 style={{margin: 0, color: '#555'}}>FACTURA</h2>
-                <p style={{margin: '5px 0'}}><strong>N°:</strong> 0001-{String(alquiler.id_alquiler).padStart(8, '0')}</p>
-                <p style={{margin: 0}}><strong>Fecha:</strong> {new Date().toLocaleDateString()}</p>
-            </div>
-          </div>
+        <button onClick={onClose} className="no-print" style={{position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#999'}}>
+            &times;
+        </button>
 
-          {/* Datos Cliente y Emisor */}
-          <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '30px'}}>
-            <div style={{width: '45%'}}>
-                <h4 style={{borderBottom: '1px solid #ccc', paddingBottom: '5px'}}>Facturar a:</h4>
-                <p style={{margin: '5px 0'}}><strong>Cliente:</strong> {alquiler.clienteNombre}</p>
-                {/* Aquí podrías agregar DNI/Dirección si vinieran en el objeto alquiler completo */}
-            </div>
-            <div style={{width: '45%'}}>
-                <h4 style={{borderBottom: '1px solid #ccc', paddingBottom: '5px'}}>Detalles del Servicio:</h4>
-                <p style={{margin: '5px 0'}}><strong>Vehículo:</strong> {alquiler.vehiculoNombre}</p>
-                <p style={{margin: '5px 0'}}><strong>Retiro:</strong> {new Date(alquiler.fecha_hora_inicio).toLocaleString()}</p>
-                <p style={{margin: '5px 0'}}><strong>Devolución:</strong> {new Date(alquiler.fecha_hora_fin_prevista).toLocaleString()}</p>
-            </div>
-          </div>
+        {loading && <div style={{textAlign: 'center', padding: '50px', color: '#666'}}>Cargando factura...</div>}
+        
+        {error && <div style={{textAlign: 'center', padding: '50px', color: '#ef4444'}}>⚠️ {error}</div>}
 
-          {/* Tabla de Conceptos */}
-          <table style={{width: '100%', borderCollapse: 'collapse', marginBottom: '30px'}}>
-            <thead>
-                <tr style={{backgroundColor: '#f5f5f5', borderBottom: '1px solid #000'}}>
-                    <th style={{padding: '10px', textAlign: 'left'}}>Descripción</th>
-                    <th style={{padding: '10px', textAlign: 'center'}}>Cant. (Días)</th>
-                    <th style={{padding: '10px', textAlign: 'right'}}>Precio Unit.</th>
-                    <th style={{padding: '10px', textAlign: 'right'}}>Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td style={{padding: '10px', borderBottom: '1px solid #eee'}}>Alquiler de Vehículo</td>
-                    <td style={{padding: '10px', borderBottom: '1px solid #eee', textAlign: 'center'}}>{dias}</td>
-                    <td style={{padding: '10px', borderBottom: '1px solid #eee', textAlign: 'right'}}>${precioUnitario.toLocaleString("es-AR")}</td>
-                    <td style={{padding: '10px', borderBottom: '1px solid #eee', textAlign: 'right'}}>${subtotal.toLocaleString("es-AR")}</td>
-                </tr>
-                {/* Aquí podrías agregar filas extras para Multas o Daños si existieran */}
-            </tbody>
-          </table>
-
-          {/* Totales */}
-          <div style={{display: 'flex', justifyContent: 'flex-end'}}>
-            <div style={{width: '250px'}}>
-                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '5px'}}>
-                    <span>Subtotal:</span>
-                    <span>${subtotal.toLocaleString("es-AR")}</span>
+        {!loading && !error && factura && (
+            <>
+                {/* Encabezado */}
+                <div style={{borderBottom: '2px solid #333', paddingBottom: '20px', marginBottom: '30px', display: 'flex', justifyContent: 'space-between'}}>
+                    <div>
+                        <h1 style={{margin: 0, fontSize: '2rem', color: '#333'}}>ALQUILAYA</h1>
+                        <p style={{margin: '5px 0 0 0', fontSize: '0.9rem', color: '#666'}}>Servicios de Movilidad S.A.</p>
+                        <p style={{margin: 0, fontSize: '0.8rem', color: '#666'}}>Av. Corrientes 1234, CABA</p>
+                    </div>
+                    <div style={{textAlign: 'right'}}>
+                        <h2 style={{margin: 0, color: '#555'}}>FACTURA B</h2>
+                        <p style={{margin: '5px 0'}}><strong>N°:</strong> {`${String(factura.id_factura).padStart(4, '0')}-${String(alquiler.id_alquiler).padStart(8, '0')}` || `0001-${String(alquiler.id_alquiler).padStart(8, '0')}`}</p>
+                        <p style={{margin: 0}}><strong>Fecha:</strong> {new Date(factura.fecha_hora_emision || Date.now()).toLocaleDateString()}</p>
+                    </div>
                 </div>
-                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '10px', borderBottom: '1px solid #ccc', paddingBottom: '10px'}}>
-                    <span>IVA (21%):</span>
-                    <span>${impuestos.toLocaleString("es-AR")}</span>
-                </div>
-                <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '1.2rem', fontWeight: 'bold'}}>
-                    <span>TOTAL:</span>
-                    <span>${total.toLocaleString("es-AR")}</span>
-                </div>
-            </div>
-          </div>
 
-          {/* Botones de Acción (No se imprimen gracias a @media print) */}
-          <div className="no-print" style={{marginTop: '40px', textAlign: 'center', display: 'flex', gap: '10px', justifyContent: 'center'}}>
-            <button onClick={handlePrint} style={{backgroundColor: '#333', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '1rem'}}>
-                🖨️ Imprimir
-            </button>
-            <button onClick={onClose} style={{backgroundColor: '#ddd', color: '#333', padding: '10px 20px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '1rem'}}>
-                Cerrar
-            </button>
-          </div>
+                {/* Datos Cliente */}
+                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '30px', backgroundColor: '#f9f9f9', padding: '15px', borderRadius: '6px'}}>
+                    <div style={{width: '100%'}}>
+                        <h4 style={{margin: '0 0 10px 0', borderBottom: '1px solid #ddd', paddingBottom: '5px', color: '#555'}}>Cliente</h4>
+                        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
+                            <p style={{margin: 0}}><strong>Nombre:</strong> {factura.cliente?.nombre || alquiler.clienteNombre}</p>
+                            <p style={{margin: 0}}><strong>DNI/CUIT:</strong> {factura.cliente?.dni || "-"}</p>
+                            <p style={{margin: 0}}><strong>Email:</strong> {factura.cliente?.email || "-"}</p>
+                            <p style={{margin: 0}}><strong>Dirección:</strong> {factura.cliente?.direccion || "-"}</p>
+                        </div>
+                    </div>
+                </div>
 
-        </div>
+                {/* Tabla de Detalles (Items) */}
+                <table style={{width: '100%', borderCollapse: 'collapse', marginBottom: '30px', fontSize: '0.95rem'}}>
+                    <thead>
+                        <tr style={{backgroundColor: '#333', color: 'white'}}>
+                            <th style={{padding: '12px', textAlign: 'left', borderRadius: '4px 0 0 4px'}}>Concepto</th>
+                            <th style={{padding: '12px', textAlign: 'center'}}>Cant.</th>
+                            <th style={{padding: '12px', textAlign: 'right'}}>Precio Unit.</th>
+                            <th style={{padding: '12px', textAlign: 'right', borderRadius: '0 4px 4px 0'}}>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {/* Renderizamos directamente los items que manda el backend */}
+                        {factura.items?.map((item, index) => (
+                            <tr key={index} style={{borderBottom: '1px solid #eee'}}>
+                                <td style={{padding: '12px'}}>
+                                    {item.descripcion}
+                                </td>
+                                <td style={{padding: '12px', textAlign: 'center'}}>
+                                    {item.cantidad}
+                                </td>
+                                <td style={{padding: '12px', textAlign: 'right'}}>
+                                    ${Number(item.monto).toLocaleString("es-AR")}
+                                </td>
+                                <td style={{padding: '12px', textAlign: 'right', fontWeight: 'bold'}}>
+                                    ${Number(item.monto*item.cantidad).toLocaleString("es-AR")}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+
+                {/* Totales (Calculados por el backend) */}
+                <div style={{display: 'flex', justifyContent: 'flex-end'}}>
+                    <div style={{width: '300px', padding: '20px', backgroundColor: '#f9f9f9', borderRadius: '8px'}}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem'}}>
+                            <span>Subtotal:</span>
+                            <span>${Number(factura.subtotal).toLocaleString("es-AR")}</span>
+                        </div>
+                        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '15px', borderBottom: '1px solid #ddd', paddingBottom: '10px', fontSize: '0.9rem'}}>
+                            <span>Impuestos:</span>
+                            <span>${Number(factura.impuestos || 0).toLocaleString("es-AR")}</span>
+                        </div>
+                        <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '1.4rem', fontWeight: 'bold', color: '#333'}}>
+                            <span>TOTAL:</span>
+                            <span>${Number(factura.total).toLocaleString("es-AR")}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Pie de página */}
+                <div style={{marginTop: '40px', textAlign: 'center', color: '#999', fontSize: '0.8rem'}}>
+                    <p>Comprobante generado electrónicamente por AlquilaYa.</p>
+                </div>
+
+                {/* Botones */}
+                <div className="no-print" style={{marginTop: '30px', textAlign: 'center', display: 'flex', gap: '15px', justifyContent: 'center'}}>
+                    <button onClick={() => window.print()} style={{backgroundColor: '#1f2937', color: 'white', padding: '12px 25px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                        🖨️ Imprimir
+                    </button>
+                    <button onClick={onClose} style={{backgroundColor: '#e5e7eb', color: '#374151', padding: '12px 25px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '1rem', fontWeight: '600'}}>
+                        Cerrar
+                    </button>
+                </div>
+            </>
+        )}
       </div>
       
-      {/* Estilos de Impresión */}
       <style>{`
         @media print {
-          .no-print, .modal-overlay { background: none; }
-          .modal-content { box-shadow: none; padding: 0; margin: 0; width: 100%; max-width: 100%; }
-          .factura-sheet { box-shadow: none; margin: 0; padding: 0; width: 100%; }
+          .no-print, .modal-overlay { background: none; padding: 0; }
+          .modal-content { box-shadow: none; padding: 0; margin: 0; width: 100%; max-width: 100%; border: none; }
           body * { visibility: hidden; }
           .factura-sheet, .factura-sheet * { visibility: visible; }
-          .factura-sheet { position: absolute; left: 0; top: 0; }
+          .factura-sheet { position: absolute; left: 0; top: 0; width: 100%; }
         }
       `}</style>
     </div>

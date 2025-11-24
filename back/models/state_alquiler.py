@@ -1,6 +1,4 @@
 from datetime import datetime
-from services.factura_service import FacturaService
-from services.detalle_factura_service import DetalleFacturaService
 from services.vehiculo_service import VehiculoService
 from services.multa_service import MultaService
 from services.danio_service import DanioService
@@ -56,7 +54,10 @@ class EstadoActivo(EstadoAlquiler):
         # 2. Calcular el costo total (Días + Multas + Daños)
         # Esto usa la fecha real que acabamos de poner vs la fecha de inicio
         costo = alquiler.calcular_y_guardar_costo()
+        cantidad_dias = alquiler.calcular_dias_alquiler()
         
+        from services.factura_service import FacturaService
+        from services.detalle_factura_service import DetalleFacturaService
 
         factura = FacturaService.create({   "id_alquiler": alquiler.id_alquiler,
                                             "fecha_hora_emision": ahora_iso,
@@ -69,6 +70,7 @@ class EstadoActivo(EstadoAlquiler):
         detalle = DetalleFacturaService.create({
             "id_factura": factura.id_factura,
             "descripcion": f"Alquiler vehículo {vehiculo.marca} {vehiculo.nombre} {vehiculo.modelo} ({vehiculo.patente})",
+            "cantidad": cantidad_dias,
             "monto": costo
         })
 
@@ -79,6 +81,7 @@ class EstadoActivo(EstadoAlquiler):
                 detalle_multa = DetalleFacturaService.create({
                     "id_factura": factura.id_factura,
                     "descripcion": f"Multa: {multa.descripcion}",
+                    "cantidad": 1,
                     "monto": multa.monto
                 })
         
@@ -88,6 +91,7 @@ class EstadoActivo(EstadoAlquiler):
                 detalle_danio = DetalleFacturaService.create({
                     "id_factura": factura.id_factura,
                     "descripcion": f"Daño: {danio.descripcion}",
+                    "cantidad": 1,
                     "monto": danio.costo_reparacion
                 })
 

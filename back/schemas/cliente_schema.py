@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class ClienteBase(BaseModel):
     tipo_dni: str
@@ -9,6 +9,7 @@ class ClienteBase(BaseModel):
     email: str | None = None
     direccion: str | None = None
     estado: str | None = None
+    
 
 class ClienteCreate(ClienteBase):
     pass
@@ -25,3 +26,4 @@ class ClienteUpdate(BaseModel):
 
 class ClienteResponse(ClienteBase):
     id_cliente: int
+    model_config = ConfigDict(from_attributes=True)

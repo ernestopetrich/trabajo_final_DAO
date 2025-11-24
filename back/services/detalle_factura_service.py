@@ -7,6 +7,10 @@ class DetalleFacturaService:
         return DetalleFactura.create(**data)
 
     @staticmethod
+    def get_by_id_factura(id_factura):
+        return DetalleFactura.get_by_id_factura(id_factura)
+
+    @staticmethod
     def get_by_id(id_detalle):
         return DetalleFactura.get_by_id(id_detalle)
 
