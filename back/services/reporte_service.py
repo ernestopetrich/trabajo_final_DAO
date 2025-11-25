@@ -304,6 +304,7 @@ class ReportesService:
         query = """
             SELECT strftime('%Y-%m', fecha_hora_inicio) as mes, COUNT(*) as cantidad
             FROM Alquileres
+            WHERE estado IN ('finalizado', 'confirmado', 'activo')
             GROUP BY mes
             ORDER BY mes ASC
         """
