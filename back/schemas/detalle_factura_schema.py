@@ -4,6 +4,7 @@ class DetalleFacturaBase(BaseModel):
     id_detalle: int
     id_factura: int
     monto: float
+    cantidad: int
     descripcion: str
 
 class DetalleFacturaCreate(DetalleFacturaBase):

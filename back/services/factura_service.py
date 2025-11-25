@@ -13,9 +13,12 @@ class FacturaService:
     @staticmethod
     def get_by_alquiler(id_alquiler):
         factura = Factura.get_by_alquiler(id_alquiler)
+        print(factura.id_factura)
         alquiler = AlquilerService.get_by_id(id_alquiler)
         cliente = ClienteService.get_by_id(alquiler.id_cliente)
         detallesFactura = DetalleFacturaService.get_by_id_factura(factura.id_factura)
+
+        print(detallesFactura)
 
         return FacturaResponseAlquiler(
             id_factura=factura.id_factura,
