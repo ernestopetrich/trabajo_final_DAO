@@ -8,7 +8,7 @@ class ClienteBase(BaseModel):
     telefono: str | None = None
     email: str | None = None
     direccion: str | None = None
-    estado: str | None = None
+    estado: str = "activo"
     
 
 class ClienteCreate(ClienteBase):

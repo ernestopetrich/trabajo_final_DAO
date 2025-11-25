@@ -1,8 +1,9 @@
 import sqlite3
-from database import Database
-from datetime import datetime, timedelta
 from math import ceil 
 from services.vehiculo_service import VehiculoService
+from datetime import datetime, timedelta
+from database import get_db_connection
+
 
 # Importamos todas las clases de estado
 from models.state_alquiler import (
@@ -82,7 +83,7 @@ class Alquiler:
         self.estado_str = nuevo_estado_str # Actualizamos el string interno
         self.state = self._crear_estado(nuevo_estado_str) # Actualizamos el objeto State
 
-        conn = Database().get_connection()
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("UPDATE Alquileres SET estado = ? WHERE id_alquiler = ?", (nuevo_estado_str, self.id_alquiler))
         conn.commit()
@@ -90,7 +91,7 @@ class Alquiler:
 
     def set_fecha_fin_real(self, fecha_iso):
         self.fecha_hora_fin_real = fecha_iso
-        conn = Database().get_connection()
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("UPDATE Alquileres SET fecha_hora_fin_real = ? WHERE id_alquiler = ?", (fecha_iso, self.id_alquiler))
         conn.commit()
@@ -119,7 +120,7 @@ class Alquiler:
         Calcula el costo total: (Días * Precio) + Multas + Daños.
         Se llama automáticamente desde el Estado al finalizar.
         """
-        conn = Database().get_connection()
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # 1. Obtener precio diario del vehículo
@@ -172,7 +173,7 @@ class Alquiler:
     # --- MÉTODOS ESTÁTICOS (CRUD) ---
     @staticmethod
     def create(id_cliente, id_vehiculo, id_empleado, fecha_hora_inicio, fecha_hora_fin_prevista):
-        conn = Database().get_connection()
+        conn = get_db_connection()
         cursor = conn.cursor()
         try:
 
@@ -199,8 +200,46 @@ class Alquiler:
             conn.close()
 
     @staticmethod
+    def create_raw(id_cliente, id_vehiculo, id_empleado,
+                fecha_inicio, fecha_fin_prevista,
+                estado="pendiente",
+                fecha_fin_real=None,
+                costo_total=None):
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("""
+                INSERT INTO Alquileres
+                (id_cliente, id_vehiculo, id_empleado,
+                fecha_hora_inicio, fecha_hora_fin_prevista,
+                fecha_hora_fin_real, costo_total, estado)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                id_cliente,
+                id_vehiculo,
+                id_empleado,
+                fecha_inicio,
+                fecha_fin_prevista,
+                fecha_fin_real,
+                costo_total,
+                estado
+            ))
+
+            conn.commit()
+            return Alquiler.get_by_id(cursor.lastrowid)
+
+        except Exception as e:
+            print("ERROR create_raw:", e)
+            conn.rollback()
+            return None
+        finally:
+            conn.close()
+
+
+    @staticmethod
     def get_by_id(id_alquiler):
-        conn = Database().get_connection()
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Alquileres WHERE id_alquiler = ?", (id_alquiler,))
         row = cursor.fetchone()
@@ -211,7 +250,7 @@ class Alquiler:
     
     @staticmethod
     def get_all():
-        conn = Database().get_connection()
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Alquileres")
         rows = cursor.fetchall()
@@ -221,7 +260,7 @@ class Alquiler:
     @staticmethod
     def update(id_alquiler, **fields):
         """Actualiza cualquier campo del alquiler."""
-        conn = Database().get_connection()
+        conn = get_db_connection()
         cursor = conn.cursor()
 
         if 'estado' in fields:

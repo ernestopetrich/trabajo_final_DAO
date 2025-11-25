@@ -27,6 +27,11 @@ export function localToIso(datetimeLocalStr){
   return s.length === 16 ? s + ":00" : s;
 }
 
+export function descargarPDF(url) {
+  window.open(`http://127.0.0.1:8000${url}`, "_blank");
+}
+
+
 // Clientes
 export const getClientes = () => API.get("/clientes/");
 export const getCliente = (id) => API.get(`/clientes/${id}`);

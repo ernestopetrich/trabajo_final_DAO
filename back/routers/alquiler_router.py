@@ -5,9 +5,6 @@ from services.factura_service import FacturaService
 from services.vehiculo_service import VehiculoService
 from services.detalle_factura_service import DetalleFacturaService
 
-
-
-
 router = APIRouter(prefix="/alquileres", tags=["Alquileres"])
 
 @router.post("/", response_model=AlquilerCreateResponse)

@@ -1,160 +1,267 @@
+// front/src/pages/Dashboard.jsx
 import React, {useEffect, useState, useRef} from "react";
-import { getAlquileres, getVehiculos } from "../api/api.js";
-import { Chart, registerables } from "chart.js";
+import { 
+  getAlquileres, 
+  getVehiculos, 
+  getClientes, 
+  descargarPDF 
+} from "../api/api.js";
 
-// Registramos los componentes de Chart.js
+import { Chart, registerables } from "chart.js";
 Chart.register(...registerables);
 
 export default function Dashboard() {
   const [alquileres, setAlquileres] = useState([]);
   const [vehiculos, setVehiculos] = useState([]);
-  const [loading, setLoading] = useState(true); // Estado para saber si está cargando
-  
-  // Referencias a los elementos Canvas
-  const canvasRef1 = useRef(null);
-  const canvasRef2 = useRef(null);
-  
-  // Referencias para guardar las instancias de los gráficos y poder destruirlos
-  const chartInstance1 = useRef(null);
-  const chartInstance2 = useRef(null);
+  const [clientes, setClientes] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // 1. Carga de datos
-  async function load(){
+  // Refs para gráficos
+  const refFacturacion = useRef(null);
+  const refVehiculos = useRef(null);
+  const refAlqMes = useRef(null);
+
+  const chartFact = useRef(null);
+  const chartVeh = useRef(null);
+  const chartAlqMes = useRef(null);
+
+  // ===========================
+  // 🔹 1) Carga de datos
+  // ===========================
+  async function load() {
     try {
-      console.log("Iniciando carga de datos...");
-      const [resAlquileres, resVehiculos] = await Promise.all([
+      setLoading(true);
+      const [rA, rV, rC] = await Promise.all([
         getAlquileres(),
-        getVehiculos()
+        getVehiculos(),
+        getClientes()
       ]);
-      
-      console.log("Datos recibidos:", resAlquileres.data);
-      setAlquileres(resAlquileres.data || []);
-      setVehiculos(resVehiculos.data || []);
-    } catch (error) {
-      console.error("Error cargando datos:", error);
+
+      setAlquileres(rA.data || []);
+      setVehiculos(rV.data || []);
+      setClientes(rC.data || []);
+    } catch (err) {
+      console.error("Error cargando datos:", err);
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(()=>{ load(); }, []);
+  useEffect(() => { load(); }, []);
 
-  // 2. Renderizado de Gráficos
+  // Mapa rápido ID → cliente
+  const clienteMap = {};
+  clientes.forEach(c => {
+    clienteMap[c.id_cliente] = `${c.nombre} ${c.apellido}`;
+  });
+
+  // ===========================
+  // 🔹 2) Renderizado de gráficos
+  // ===========================
   useEffect(() => {
-    // Si está cargando o no hay referencias al DOM, no hacemos nada aún
-    if (loading || !canvasRef1.current || !canvasRef2.current) return;
+    if (loading) return;
 
-    // --- LIMPIEZA PREVIA OBLIGATORIA ---
-    // Si ya existen gráficos, los destruimos antes de crear nuevos
-    if (chartInstance1.current) {
-      chartInstance1.current.destroy();
+    // Destruir previos
+    if (chartFact.current) chartFact.current.destroy();
+    if (chartVeh.current) chartVeh.current.destroy();
+    if (chartAlqMes.current) chartAlqMes.current.destroy();
+
+    // ----------------------------
+    // 📌 GRAFICO FACTURACIÓN
+    // ----------------------------
+    const monthlyMoney = {};
+    alquileres.forEach(a => {
+      const fecha = a.fecha_hora_fin_real || a.fecha_hora_fin_prevista || a.fecha_hora_inicio;
+      if (!fecha) return;
+      const key = fecha.slice(0,7);
+      monthlyMoney[key] = (monthlyMoney[key] || 0) + (a.costo_total || 0);
+    });
+
+    const labelsFact = Object.keys(monthlyMoney).sort();
+    const dataFact = labelsFact.map(k => monthlyMoney[k]);
+
+    if (refFacturacion.current) {
+      chartFact.current = new Chart(refFacturacion.current.getContext("2d"), {
+        type: "bar",
+        data: {
+          labels: labelsFact.length ? labelsFact : ["Sin datos"],
+          datasets: [{
+            label: "Facturación ($)",
+            data: dataFact.length ? dataFact : [0],
+            backgroundColor: "rgba(54,162,235,0.6)",
+            borderColor: "rgba(54,162,235,1)",
+            borderWidth: 1
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
     }
-    if (chartInstance2.current) {
-      chartInstance2.current.destroy();
+
+    // ----------------------------
+    // 📌 GRAFICO VEHÍCULOS MÁS ALQUILADOS
+    // ----------------------------
+    const countVeh = {};
+    alquileres.forEach(a => {
+      if (["eliminado", "cancelado"].includes(a.estado)) return;
+      countVeh[a.id_vehiculo] = (countVeh[a.id_vehiculo] || 0) + 1;
+    });
+
+    const vehIds = Object.keys(countVeh);
+    const labelsVeh = vehIds.map(id => {
+      const v = vehiculos.find(x => x.id_vehiculo === Number(id));
+      return v ? `${v.marca} ${v.modelo} (${v.patente})` : `Vehículo ${id}`;
+    });
+    const dataVeh = vehIds.map(id => countVeh[id]);
+
+    if (refVehiculos.current) {
+      chartVeh.current = new Chart(refVehiculos.current.getContext("2d"), {
+        type: "pie",
+        data: {
+          labels: labelsVeh.length ? labelsVeh : ["Sin datos"],
+          datasets: [{
+            data: dataVeh.length ? dataVeh : [1],
+            backgroundColor: [
+              "#FF6384", "#36A2EB", "#FFCE56",
+              "#4BC0C0", "#9966FF", "#FF9F40"
+            ]
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
     }
 
-    // --- LÓGICA GRÁFICO 1: Facturación Mensual ---
-    const months = {};
-    alquileres.forEach(x => {
-      // Intentamos obtener la fecha de varias propiedades posibles
-      const fechaRaw = x.fecha_hora_fin_real || x.fecha_hora_fin_prevista || x.fecha_hora_inicio;
-      if (fechaRaw) {
-        const d = fechaRaw.slice(0, 7); // YYYY-MM
-        months[d] = (months[d] || 0) + (x.costo_total || 0);
-      }
-    });
-    
-    const labels1 = Object.keys(months).sort();
-    const data1 = labels1.map(k => months[k]);
-
-    const ctx1 = canvasRef1.current.getContext("2d");
-    chartInstance1.current = new Chart(ctx1, {
-      type: "bar",
-      data: {
-        labels: labels1.length ? labels1 : ["Sin datos"], // Fallback si no hay datos
-        datasets: [{
-          label: "Facturación ($)",
-          data: data1.length ? data1 : [0],
-          backgroundColor: "rgba(54, 162, 235, 0.6)",
-          borderColor: "rgba(54, 162, 235, 1)",
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false, // Permite que se adapte al contenedor
-      }
+    // ----------------------------
+    // 📌 GRAFICO ALQUILERES POR MES
+    // ----------------------------
+    const monthlyCount = {};
+    alquileres.forEach(a => {
+      const fecha = a.fecha_hora_inicio || a.fecha_hora_fin_real || a.fecha_hora_fin_prevista;
+      if (!fecha) return;
+      const key = fecha.slice(0,7);
+      monthlyCount[key] = (monthlyCount[key] || 0) + 1;
     });
 
-    // --- LÓGICA GRÁFICO 2: Vehículos más alquilados ---
-    const counts = {};
-    alquileres.forEach(x => {
-      if(x.id_vehiculo) {
-        counts[x.id_vehiculo] = (counts[x.id_vehiculo] || 0) + 1;
-      }
-    });
+    const labelsMes = Object.keys(monthlyCount).sort();
+    const dataMes = labelsMes.map(k => monthlyCount[k]);
 
-    // Mapear IDs a Nombres (Patente o Modelo)
-    const labels2 = Object.keys(counts).map(id => {
-      const v = vehiculos.find(veh => veh.id_vehiculo === parseInt(id));
-      return v ? `${v.marca} ${v.nombre} ${v.modelo} (${v.patente})` : `ID ${id}`;
-    });
-    const data2 = Object.values(counts);
+    if (refAlqMes.current) {
+      chartAlqMes.current = new Chart(refAlqMes.current.getContext("2d"), {
+        type: "bar",
+        data: {
+          labels: labelsMes.length ? labelsMes : ["Sin datos"],
+          datasets: [{
+            label: "Alquileres",
+            data: dataMes.length ? dataMes : [0],
+            backgroundColor: "rgba(255,99,132,0.6)",
+            borderColor: "rgba(255,99,132,1)",
+            borderWidth: 1
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
 
-    const ctx2 = canvasRef2.current.getContext("2d");
-    chartInstance2.current = new Chart(ctx2, {
-      type: "pie",
-      data: {
-        labels: labels2.length ? labels2 : ["Sin datos"],
-        datasets: [{
-          data: data2.length ? data2 : [1], // [1] para que se vea un círculo gris si está vacío
-          backgroundColor: [
-            "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF", "#FF9F40"
-          ]
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-      }
-    });
-
-    // Función de limpieza al desmontar el componente
+    // cleanup
     return () => {
-      if (chartInstance1.current) chartInstance1.current.destroy();
-      if (chartInstance2.current) chartInstance2.current.destroy();
+      if (chartFact.current) chartFact.current.destroy();
+      if (chartVeh.current) chartVeh.current.destroy();
+      if (chartAlqMes.current) chartAlqMes.current.destroy();
     };
 
-  }, [alquileres, vehiculos, loading]); // Se re-ejecuta si cambian los datos
+  }, [alquileres, vehiculos, clientes, loading]);
+
+
+  // ===========================
+  // 🔹 Render
+  // ===========================
+  const cardStyle = {
+    background: "white",
+    padding: "20px",
+    borderRadius: "8px",
+    boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+    minHeight: "300px",
+    display: "flex",
+    flexDirection: "column"
+  };
+
+  const buttonStyle = {
+    marginTop: "10px",
+    padding: "8px 12px",
+    background: "#0d6efd",
+    color: "white",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+    width: "fit-content"
+  };
 
   return (
-    <div className="page" style={{ padding: "20px" }}>
+    <div style={{ padding: "20px" }}>
       <h2>Dashboard</h2>
-      
-      {loading && <p>Cargando estadísticas...</p>}
-      
-      {!loading && alquileres.length === 0 && (
-        <div style={{ padding: "10px", backgroundColor: "#fff3cd", marginBottom: "20px", borderRadius: "5px" }}>
-          ⚠️ No hay alquileres registrados. Los gráficos aparecerán vacíos.
-        </div>
-      )}
 
-      <div className="grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" }}>
-        
-        {/* Tarjeta 1 */}
-        <div className="card" style={{ background: "white", padding: "20px", borderRadius: "8px", boxShadow: "0 2px 5px rgba(0,0,0,0.1)", minHeight: "300px" }}>
-          <h3>Facturación mensual</h3>
-          <div style={{ position: "relative", height: "250px", width: "100%" }}>
-            <canvas ref={canvasRef1} />
-          </div>
+      <div 
+        style={{
+          display: "grid",
+          gap: "20px",
+          gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))"
+        }}
+      >
+
+        {/* 1️⃣ Alquileres por cliente */}
+        <div style={cardStyle}>
+          <h3>Alquileres por cliente</h3>
+
+          <ul style={{listStyle: "none", padding: 0, maxHeight: 170, overflow: "auto"}}>
+            {Object.entries(
+              alquileres.reduce((acc, alq) => {
+                if (!["eliminado", "cancelado"].includes(alq.estado)) {
+                  acc[alq.id_cliente] = (acc[alq.id_cliente] || 0) + 1;
+                }
+                return acc;
+              }, {})
+            ).map(([id, cant]) => (
+              <li key={id} style={{padding: "6px 0", borderBottom: "1px solid #f2f2f2"}}>
+                {clienteMap[id] || `Cliente ${id}`} — {cant} alquiler(es)
+              </li>
+            ))}
+          </ul>
+
+          <button style={buttonStyle} onClick={() => descargarPDF("/reportes/pdf/alquileres-por-cliente")}>
+            Descargar PDF
+          </button>
         </div>
 
-        {/* Tarjeta 2 */}
-        <div className="card" style={{ background: "white", padding: "20px", borderRadius: "8px", boxShadow: "0 2px 5px rgba(0,0,0,0.1)", minHeight: "300px" }}>
+        {/* 2️⃣ Vehículos más alquilados */}
+        <div style={cardStyle}>
           <h3>Vehículos más alquilados</h3>
-          <div style={{ position: "relative", height: "250px", width: "100%" }}>
-            <canvas ref={canvasRef2} />
+          <div style={{ position: "relative", height: "230px" }}>
+            <canvas ref={refVehiculos}></canvas>
           </div>
+          <button style={buttonStyle} onClick={() => descargarPDF("/reportes/pdf/vehiculos-mas-alquilados")}>
+            Descargar PDF
+          </button>
+        </div>
+
+        {/* 3️⃣ Alquileres por mes — gráfico */}
+        <div style={cardStyle}>
+          <h3>Alquileres por mes</h3>
+          <div style={{ position: "relative", height: "230px" }}>
+            <canvas ref={refAlqMes}></canvas>
+          </div>
+          <button style={buttonStyle} onClick={() => descargarPDF("/reportes/pdf/alquileres-por-mes")}>
+            Descargar PDF
+          </button>
+        </div>
+
+        {/* 4️⃣ Facturación mensual */}
+        <div style={cardStyle}>
+          <h3>Facturación mensual</h3>
+          <div style={{ position: "relative", height: "230px" }}>
+            <canvas ref={refFacturacion}></canvas>
+          </div>
+          <button style={buttonStyle} onClick={() => descargarPDF("/reportes/pdf/facturacion-mensual")}>
+            Descargar PDF
+          </button>
         </div>
 
       </div>

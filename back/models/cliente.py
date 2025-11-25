@@ -22,6 +22,7 @@ class Cliente:
         conn = Database().get_connection()
         cursor = conn.cursor()
         try:
+            estado = estado or "activo"
             cursor.execute(
                 "INSERT INTO Clientes (tipo_dni, dni, nombre, apellido, telefono, email, direccion, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 (tipo_dni, dni, nombre, apellido, telefono, email, direccion, estado)

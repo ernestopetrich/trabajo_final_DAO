@@ -151,8 +151,7 @@ class Database:
         CREATE TABLE IF NOT EXISTS Detalle_factura (
             id_detalle INTEGER PRIMARY KEY AUTOINCREMENT,
             id_factura INTEGER NOT NULL,
-            descripcion TEXT NOT NULL,
-            cantidad INTEGER NOT NULL DEFAULT 1, 
+            descripcion TEXT NOT NULL, 
             monto REAL NOT NULL,
             FOREIGN KEY (id_factura) REFERENCES Facturas (id_factura)
         );

@@ -31,6 +31,18 @@ class Danio:
             return None
         finally:
             conn.close()
+
+    @staticmethod
+    def get_by_id(id_danio):
+        conn = Database().get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Danios WHERE id_danio = ?", (id_danio,))
+        row = cursor.fetchone()
+        conn.close()
+
+        if row:
+            return Danio(*row)
+        return None
         
     @staticmethod
     def get_by_id_alquiler(id_alquiler):
