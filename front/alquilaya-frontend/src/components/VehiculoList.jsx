@@ -196,7 +196,7 @@ export default function VehiculoList({ items = [], onDelete, onEdit }) {
                 const isDeleted = v.estado === 'eliminado';
                 const isAlquilado = v.estado === 'alquilado';
                 const isInMaintenance = v.estado === 'mantenimiento';
-                const isDisabled = isDeleted || isAlquilado || isInMaintenance;
+                const isDisabled = isDeleted || isAlquilado;
 
                 return (
                     <tr 
@@ -237,7 +237,7 @@ export default function VehiculoList({ items = [], onDelete, onEdit }) {
                         <div style={{display:'flex', gap:'6px'}}>
                             {/* BOTÓN EDITAR */}
                             <button 
-                                disabled={isDeleted} // Permitimos editar aunque esté alquilado (para cambiar precio, etc), pero no si está borrado
+                                disabled={isDisabled} // Permitimos editar aunque esté alquilado (para cambiar precio, etc), pero no si está borrado
                                 onClick={() => onEdit(v)} 
                                 title="Editar Vehículo"
                                 style={{ 
