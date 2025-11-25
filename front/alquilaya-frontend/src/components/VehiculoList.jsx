@@ -9,7 +9,8 @@ export default function VehiculoList({ items = [], onDelete, onEdit }) {
   // Estado para los 3 toggles de filtro
   const [filters, setFilters] = useState({
     disponibles: true, // Por defecto visible
-    ocupados: true,    // Incluye 'alquilado' y 'mantenimiento'
+    alquilados: true,    // Incluye 'alquilado' y 'mantenimiento'
+    mantenimiento: false, // 'mantenimiento'
     eliminados: false  // Por defecto oculto
   });
 
@@ -37,16 +38,18 @@ export default function VehiculoList({ items = [], onDelete, onEdit }) {
   const processedItems = useMemo(() => {
     let data = [...items];
 
-    // A. FILTRO POR ESTADO (Los 3 Toggles)
+    // A. FILTRO POR ESTADO (Los 4 Toggles)
     data = data.filter(v => {
       const e = v.estado;
       
       const isDisponible = e === 'disponible';
-      const isOcupado = e === 'alquilado' || e === 'mantenimiento';
+      const isAlquilado = e === 'alquilado';
+      const isMantenimiento = e === 'mantenimiento';
       const isEliminado = e === 'eliminado';
 
       if (filters.disponibles && isDisponible) return true;
-      if (filters.ocupados && isOcupado) return true;
+      if (filters.alquilados && isAlquilado) return true;
+      if (filters.mantenimiento && isMantenimiento) return true;
       if (filters.eliminados && isEliminado) return true;
       
       return false;
@@ -103,16 +106,28 @@ export default function VehiculoList({ items = [], onDelete, onEdit }) {
                 {filters.disponibles ? '✓' : ''} Disponibles
             </label>
 
-            {/* Toggle: OCUPADOS (Azul - Alquilado/Mantenimiento) */}
+            {/* Toggle: Alquilados (Azul - Alquiladoo) */}
             <label style={{
                 display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', userSelect: 'none',
-                backgroundColor: filters.ocupados ? '#dbeafe' : '#f3f4f6',
-                border: filters.ocupados ? '1px solid #93c5fd' : '1px solid #e5e7eb',
-                color: filters.ocupados ? '#1e40af' : '#6b7280',
+                backgroundColor: filters.alquilados ? '#dbeafe' : '#f3f4f6',
+                border: filters.alquilados ? '1px solid #93c5fd' : '1px solid #e5e7eb',
+                color: filters.alquilados ? '#1e40af' : '#6b7280',
                 padding: '5px 10px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '500'
             }}>
-                <input type="checkbox" checked={filters.ocupados} onChange={() => toggleFilter('ocupados')} style={{display:'none'}} />
-                {filters.ocupados ? '✓' : ''} Alquilados
+                <input type="checkbox" checked={filters.alquilados} onChange={() => toggleFilter('alquilados')} style={{display:'none'}} />
+                {filters.alquilados ? '✓' : ''} Alquilados
+            </label>
+
+            {/* Toggle: mantenimiento (Gris - Mantenimiento) */}
+            <label style={{
+                display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', userSelect: 'none',
+                backgroundColor: filters.mantenimiento ? '#e5e7eb' : '#f9fafb',
+                border: filters.mantenimiento ? '1px solid #9ca3af' : '1px solid #e5e7eb',
+                color: filters.mantenimiento ? '#374151' : '#6b7280',
+                padding: '5px 10px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '500'
+            }}>
+                <input type="checkbox" checked={filters.mantenimiento} onChange={() => toggleFilter('mantenimiento')} style={{display:'none'}} />
+                {filters.mantenimiento ? '✓' : ''} Mantenimiento
             </label>
 
             {/* Toggle: ELIMINADOS (Rojo) */}
@@ -179,7 +194,9 @@ export default function VehiculoList({ items = [], onDelete, onEdit }) {
             {processedItems.length > 0 ? (
               processedItems.map((v) => {
                 const isDeleted = v.estado === 'eliminado';
-                const isDisabled = isDeleted || v.estado === 'alquilado' || v.estado === 'mantenimiento';
+                const isAlquilado = v.estado === 'alquilado';
+                const isInMaintenance = v.estado === 'mantenimiento';
+                const isDisabled = isDeleted || isAlquilado || isInMaintenance;
 
                 return (
                     <tr 
@@ -199,8 +216,16 @@ export default function VehiculoList({ items = [], onDelete, onEdit }) {
                         <span style={{
                             padding: '4px 8px', 
                             borderRadius: '4px', 
-                            backgroundColor: v.estado === 'disponible' ? '#d1fae5' : isDeleted ? '#fee2e2' : '#e0f2fe',
-                            color: v.estado === 'disponible' ? '#065f46' : isDeleted ? '#991b1b' : '#075985', 
+                            backgroundColor: 
+                            v.estado === 'disponible' ? '#d1fae5' : 
+                            isDeleted ? '#fee2e2' :
+                            isAlquilado ? '#e0f2fe' : 
+                            isInMaintenance ? '#E5E7EB' : 'transparent',
+
+                            color: v.estado === 'disponible' ? '#065f46' :
+                            isDeleted ? '#991b1b' :
+                            isAlquilado ? '#075985' : 
+                            isInMaintenance ? '#364151' : 'inherit', 
                             fontSize: '0.85em', fontWeight: 'bold',
                             textTransform: 'capitalize',
                             border: isDeleted ? '1px solid #fecaca' : 'none'

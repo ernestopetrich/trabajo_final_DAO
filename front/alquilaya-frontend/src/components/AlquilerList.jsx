@@ -69,7 +69,14 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
     // 1. Enriquecer datos (Nombres y Precios)
     let data = items.map(item => {
       const precioDiario = getPrecioVehiculo(item.id_vehiculo);
-      const dias = calcularDias(item.fecha_hora_inicio, item.fecha_hora_fin_prevista);
+      let dias = 0;
+      if (item.fecha_hora_fin_real !== null){
+        dias = calcularDias(item.fecha_hora_inicio, item.fecha_hora_fin_real);
+      }
+      else {
+        dias = calcularDias(item.fecha_hora_inicio, item.fecha_hora_fin_prevista);
+      }
+      
       const precioTotal = precioDiario * dias;
 
       return {

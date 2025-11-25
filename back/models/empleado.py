@@ -14,14 +14,14 @@ class Empleado:
         return f"<Empleado {self.nombre} {self.apellido} (DNI: {self.dni})>"
 
     @staticmethod
-    def create(tipo_dni, dni, nombre, apellido):
+    def create(tipo_dni, dni, nombre, apellido, activo=1):
         """Crea un nuevo empleado en la BD."""
         conn = Database().get_connection()
         cursor = conn.cursor()
         try:
             cursor.execute(
-                "INSERT INTO Empleados (tipo_dni, dni, nombre, apellido, activo) VALUES (?, ?, ?, ?, 1)",
-                (tipo_dni, dni, nombre, apellido)
+                "INSERT INTO Empleados (tipo_dni, dni, nombre, apellido, activo) VALUES (?, ?, ?, ?, ?)",
+                (tipo_dni, dni, nombre, apellido, activo)
             )
             conn.commit()
             return Empleado.get_by_id(cursor.lastrowid)

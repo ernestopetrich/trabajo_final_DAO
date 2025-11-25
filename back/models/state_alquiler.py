@@ -2,6 +2,7 @@ from datetime import datetime
 from services.vehiculo_service import VehiculoService
 from services.multa_service import MultaService
 from services.danio_service import DanioService
+from services.vehiculo_service import VehiculoService
 
 
 class EstadoAlquiler:
@@ -40,6 +41,7 @@ class EstadoConfirmado(EstadoAlquiler):
         if datetime.fromisoformat(alquiler.fecha_hora_inicio) >= datetime.now():
             raise ValueError("No se puede iniciar el alquiler antes de la fecha y hora de inicio programada.")
         alquiler.set_estado("activo")
+        VehiculoService.update(alquiler.id_vehiculo, {"estado": "alquilado"})
         return "Alquiler iniciado. El vehículo está en uso."
     
     def eliminar(self, alquiler):
