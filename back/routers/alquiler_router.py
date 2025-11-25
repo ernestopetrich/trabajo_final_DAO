@@ -50,6 +50,7 @@ def iniciar_alquiler(id_alquiler: int):
         raise HTTPException(404, "Alquiler no encontrado")
     
     try:
+        print("Iniciando el alquiler...")
         mensaje = alquiler.iniciar()
         alquiler_actualizado = AlquilerService.get_by_id(id_alquiler)
         return alquiler_actualizado

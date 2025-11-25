@@ -1,5 +1,6 @@
 import sqlite3
 from database import Database
+from services.alquiler_service import AlquilerService
 
 class Cliente:
     def __init__(self, id_cliente, tipo_dni, dni, nombre, apellido, telefono, email, direccion, estado):
@@ -93,3 +94,24 @@ class Cliente:
         finally:
             conn.close()
 
+
+    def is_available(self, fecha_inicio, fecha_fin):
+        # Verfica si el cliente no tiene otro alquiler en las fechas futuras
+        conn = Database().get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT COUNT(*) FROM Alquileres
+            WHERE id_cliente = ?
+            AND estado IN ('pendiente', 'confirmado')
+            AND (
+                (fecha_hora_inicio <= ? AND fecha_hora_fin_prevista >= ?)
+                OR
+                (fecha_hora_inicio <= ? AND fecha_hora_fin_prevista >= ?)
+                OR
+                (fecha_hora_inicio >= ? AND fecha_hora_fin_prevista <= ?)
+            )
+        """, (self.id_cliente, fecha_inicio, fecha_fin, fecha_inicio, fecha_fin, fecha_inicio, fecha_fin))
+        count = cursor.fetchone()[0]
+        conn.close()
+        return count == 0

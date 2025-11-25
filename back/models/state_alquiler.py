@@ -37,7 +37,7 @@ class EstadoPendiente(EstadoAlquiler):
 
 class EstadoConfirmado(EstadoAlquiler):
     def iniciar(self, alquiler):
-        if datetime.fromisoformat(alquiler.fecha_hora_inicio) > datetime.now():
+        if datetime.fromisoformat(alquiler.fecha_hora_inicio) >= datetime.now():
             raise ValueError("No se puede iniciar el alquiler antes de la fecha y hora de inicio programada.")
         alquiler.set_estado("activo")
         return "Alquiler iniciado. El vehículo está en uso."

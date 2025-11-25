@@ -4,7 +4,6 @@ from services.vehiculo_service import VehiculoService
 from datetime import datetime, timedelta
 from database import get_db_connection
 
-
 # Importamos todas las clases de estado
 from models.state_alquiler import (
     EstadoPendiente, 
@@ -180,10 +179,20 @@ class Alquiler:
             estado_inicial = 'pendiente' 
             
             vehiculo = VehiculoService.get_by_id(id_vehiculo)
+            from services.cliente_service import ClienteService
+            cliente = ClienteService.get_by_id(id_cliente)
+
+            if not cliente:
+                print("Error: Cliente no encontrado.")
+                return None
+
+            if not cliente.is_available(fecha_hora_inicio, fecha_hora_fin_prevista):
+                print("Error: El cliente tiene otro alquiler en las fechas solicitadas.")
+                return None
 
             if vehiculo.is_available(fecha_hora_inicio, fecha_hora_fin_prevista) == False:
                 print("Error: El vehículo no está disponible en las fechas solicitadas.")
-                return 'Vehiculo: {vehiculo.patente} No disponible'
+                return None
 
             cursor.execute(
                 "INSERT INTO Alquileres (id_cliente, id_vehiculo, id_empleado, fecha_hora_inicio, fecha_hora_fin_prevista, estado) VALUES (?, ?, ?, ?, ?, ?)",
