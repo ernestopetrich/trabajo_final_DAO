@@ -100,18 +100,16 @@ class Cliente:
         conn = Database().get_connection()
         cursor = conn.cursor()
 
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT COUNT(*) FROM Alquileres
             WHERE id_cliente = ?
-            AND estado IN ('pendiente', 'confirmado')
-            AND (
-                (fecha_hora_inicio <= ? AND fecha_hora_fin_prevista >= ?)
-                OR
-                (fecha_hora_inicio <= ? AND fecha_hora_fin_prevista >= ?)
-                OR
-                (fecha_hora_inicio >= ? AND fecha_hora_fin_prevista <= ?)
-            )
-        """, (self.id_cliente, fecha_inicio, fecha_fin, fecha_inicio, fecha_fin, fecha_inicio, fecha_fin))
+            AND estado IN ('pendiente', 'confirmada', 'activo')
+            AND (fecha_hora_inicio < ? AND fecha_hora_fin_prevista > ?)
+            """,
+            (self.id_cliente, fecha_fin, fecha_inicio)
+        )
         count = cursor.fetchone()[0]
+
         conn.close()
         return count == 0

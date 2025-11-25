@@ -17,5 +17,4 @@ class AlquilerResponse(AlquilerBase):
     estado: str
 
 class AlquilerCreateResponse(AlquilerBase):
-    descripcion: str
     id_alquiler: int
