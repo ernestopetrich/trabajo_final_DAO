@@ -102,7 +102,7 @@ export default function Dashboard() {
     // ----------------------------
     const countVeh = {};
     alquileres.forEach(a => {
-      if (["eliminado", "cancelado"].includes(a.estado)) return;
+      if (["eliminado", "cancelado", "pendiente"].includes(a.estado)) return;
       countVeh[a.id_vehiculo] = (countVeh[a.id_vehiculo] || 0) + 1;
     });
 
@@ -136,6 +136,7 @@ export default function Dashboard() {
     const monthlyCount = {};
     alquileres.forEach(a => {
       const fecha = a.fecha_hora_inicio || a.fecha_hora_fin_real || a.fecha_hora_fin_prevista;
+      if (["eliminado", "pendiente"].includes(a.estado)) return;
       if (!fecha) return;
       const key = fecha.slice(0,7);
       monthlyCount[key] = (monthlyCount[key] || 0) + 1;
