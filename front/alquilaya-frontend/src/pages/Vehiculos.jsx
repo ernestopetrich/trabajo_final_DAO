@@ -26,6 +26,27 @@ export default function Vehiculos(){
     load(); // Recargamos la lista
   }
 
+  // --- LÓGICA DE MANTENIMIENTO (NUEVO) ---
+  async function handleMantenimiento(vehiculo) {
+    // Si está disponible, lo mandamos a mantenimiento.
+    // Si está en mantenimiento, lo devolvemos a disponible.
+    const nuevoEstado = vehiculo.estado === 'mantenimiento' ? 'disponible' : 'mantenimiento';
+    
+    const mensaje = nuevoEstado === 'mantenimiento' 
+        ? `¿Enviar el vehículo ${vehiculo.patente} a mantenimiento?`
+        : `¿Habilitar el vehículo ${vehiculo.patente} nuevamente?`;
+
+    if(window.confirm(mensaje)) {
+        try {
+            await updateVehiculo(vehiculo.id_vehiculo, { estado: nuevoEstado });
+            load();
+        } catch (error) {
+            alert("Error al cambiar estado: " + error.message);
+        }
+    }
+  }
+
+
 
   return (
     <div className="page">
@@ -57,6 +78,7 @@ export default function Vehiculos(){
         items={vehiculos} 
         onDelete={handleDelete} 
         onEdit={startEdit} // Pasamos la función de editar
+        onMantenimiento={handleMantenimiento}
       />
     </div>
   );

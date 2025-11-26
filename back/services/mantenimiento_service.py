@@ -1,3 +1,4 @@
+from database import Database
 from models.mantenimiento import Mantenimiento
 
 class MantenimientoService:
@@ -13,3 +14,11 @@ class MantenimientoService:
     @staticmethod
     def get_all():
         return Mantenimiento.get_all()
+    
+    @staticmethod
+    def update(id_mantenimiento, data):
+        return Mantenimiento.update(id_mantenimiento, **data)
+    
+    @staticmethod
+    def get_active_by_vehiculo(id_vehiculo):
+        return Mantenimiento.get_active_by_vehiculo(id_vehiculo)

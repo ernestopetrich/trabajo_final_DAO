@@ -109,7 +109,7 @@ export default function Dashboard() {
     const vehIds = Object.keys(countVeh);
     const labelsVeh = vehIds.map(id => {
       const v = vehiculos.find(x => x.id_vehiculo === Number(id));
-      return v ? `${v.marca} ${v.modelo} (${v.patente})` : `Vehículo ${id}`;
+      return v ? `${v.marca} ${v.nombre} ${v.modelo} (${v.patente})` : `Vehículo ${id}`;
     });
     const dataVeh = vehIds.map(id => countVeh[id]);
 

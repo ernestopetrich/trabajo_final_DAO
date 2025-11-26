@@ -1,5 +1,7 @@
+from datetime import datetime
 import sqlite3
 from database import Database
+from services.mantenimiento_service import MantenimientoService
 
 class Vehiculo:
     def __init__(self, id_vehiculo, patente, marca, modelo, nombre, precio_diario, estado):
@@ -141,9 +143,37 @@ class Vehiculo:
         if not query_fields:
             return Vehiculo.get_by_id(id_vehiculo)
 
+
+        if 'mantenimiento' in fields.values():
+            print("Poniendo vehículo en mantenimiento...")
+            # Si se pone en mantenimiento, no se puede estar alquilado
+            veh = Vehiculo.get_by_id(id_vehiculo)
+            if veh and veh.estado in ['eliminado']:
+                conn.close()
+                return None
+            
+            man = MantenimientoService.get_active_by_vehiculo(id_vehiculo)
+            if not man:
+                fecha_hora_actual = datetime.now().isoformat(timespec='seconds')
+                MantenimientoService.create({
+                    "id_vehiculo": id_vehiculo,
+                    "fecha_hora_inicio": fecha_hora_actual,
+                    "descripcion": "Puesto en mantenimiento",
+                    "costo": 1000
+                })
+
+        elif 'disponible' in fields.values():
+            # Si se reactiva, cerrar mantenimiento activo
+            mantenimientos = MantenimientoService.get_active_by_vehiculo(id_vehiculo)
+            fecha_hora_actual = datetime.now().isoformat(timespec='seconds')
+            if mantenimientos:
+                MantenimientoService.update(mantenimientos.id_mantenimiento, {'fecha_hora_fin': fecha_hora_actual})
+            
+
         params.append(id_vehiculo)
         
         try:
+            print("Actualizando vehículo a", fields)
             cur.execute(f"UPDATE Vehiculos SET {', '.join(query_fields)} WHERE id_vehiculo=?", params)
             conn.commit()
             return Vehiculo.get_by_id(id_vehiculo)

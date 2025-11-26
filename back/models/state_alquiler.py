@@ -1,4 +1,5 @@
 from datetime import datetime
+from services.mantenimiento_service import MantenimientoService
 from services.vehiculo_service import VehiculoService
 from services.multa_service import MultaService
 from services.danio_service import DanioService
@@ -85,7 +86,7 @@ class EstadoActivo(EstadoAlquiler):
 
         if multas:
             for multa in multas:
-                detalle_multa = DetalleFacturaService.create({
+                DetalleFacturaService.create({
                     "id_factura": factura.id_factura,
                     "descripcion": f"Multa: {multa.descripcion}",
                     "cantidad": 1,
@@ -95,20 +96,29 @@ class EstadoActivo(EstadoAlquiler):
         danios = DanioService.get_by_id_alquiler(alquiler.id_alquiler)
         if danios:
             for danio in danios:
-                detalle_danio = DetalleFacturaService.create({
+                DetalleFacturaService.create({
                     "id_factura": factura.id_factura,
                     "descripcion": f"Daño: {danio.descripcion}",
                     "cantidad": 1,
                     "monto": danio.costo_reparacion
                 })
+                MantenimientoService.create({
+                    "id_vehiculo": alquiler.id_vehiculo,
+                    "fecha_hora_inicio": ahora_iso,
+                    "descripcion": f"Mantenimiento por daño reportado: {danio.descripcion}",
+                    "costo": danio.costo_reparacion
+                })
+                estado = "mantenimiento"
+        else:
+            estado = "disponible"
 
         
 
 
         # 3. Cambiar estado a finalizado
         alquiler.set_estado("finalizado")
-        
-        VehiculoService.update(alquiler.id_vehiculo, { "estado": "disponible" })
+
+        VehiculoService.update(alquiler.id_vehiculo, { "estado": estado })
 
         return f"Vehículo devuelto. Alquiler finalizado. Costo total calculado: ${costo}"
 
