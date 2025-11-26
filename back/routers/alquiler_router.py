@@ -9,7 +9,7 @@ router = APIRouter(prefix="/alquileres", tags=["Alquileres"])
 
 @router.post("/", response_model=AlquilerCreateResponse)
 def create_alquiler(data: AlquilerCreate):
-    alq = AlquilerService.create(data.dict())
+    alq = AlquilerService.create(data.model_dump())
     if not alq:
         raise HTTPException(400, "No se pudo crear el alquiler")
     return alq

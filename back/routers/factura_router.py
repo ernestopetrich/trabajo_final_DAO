@@ -6,7 +6,7 @@ router = APIRouter(prefix="/facturas", tags=["Facturas"])
 
 @router.post("/", response_model=FacturaResponse)
 def create_factura(data: FacturaCreate):
-    return FacturaService.create(data.dict())
+    return FacturaService.create(data.model_dump())
 
 @router.get("/", response_model=list[FacturaResponse])
 def get_facturas():

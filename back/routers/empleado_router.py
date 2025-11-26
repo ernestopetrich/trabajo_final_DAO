@@ -6,7 +6,7 @@ router = APIRouter(prefix="/empleados", tags=["Empleados"])
 
 @router.post("/", response_model=EmpleadoResponse)
 def create_empleado(data: EmpleadoCreate):
-    return EmpleadoService.create(data.dict())
+    return EmpleadoService.create(data.model_dump())
 
 @router.get("/", response_model=list[EmpleadoResponse])
 def get_empleados():

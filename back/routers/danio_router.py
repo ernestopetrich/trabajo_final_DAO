@@ -6,7 +6,7 @@ router = APIRouter(prefix="/danios", tags=["Daños"])
 
 @router.post("/", response_model=DanioResponse)
 def create_danio(data: DanioCreate):
-    return DanioService.create(data.dict())
+    return DanioService.create(data.model_dump())
 
 @router.get("/", response_model=list[DanioResponse])
 def get_danios():

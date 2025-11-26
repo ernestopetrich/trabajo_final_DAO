@@ -6,7 +6,7 @@ router = APIRouter(prefix="/clientes", tags=["Clientes"])
 
 @router.post("/", response_model=ClienteResponse)
 def create_cliente(data: ClienteCreate):
-    return ClienteService.create(data.dict())
+    return ClienteService.create(data.model_dump())
 
 @router.get("/", response_model=list[ClienteResponse])
 def get_clientes():

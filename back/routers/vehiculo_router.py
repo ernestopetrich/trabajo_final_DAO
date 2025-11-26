@@ -6,7 +6,7 @@ router = APIRouter(prefix="/vehiculos", tags=["Vehículos"])
 
 @router.post("/", response_model=VehiculoResponse)
 def create_vehiculo(data: VehiculoCreate):
-    return VehiculoService.create(data.dict())
+    return VehiculoService.create(data.model_dump())
 
 @router.get("/", response_model=list[VehiculoResponse])
 def get_all():

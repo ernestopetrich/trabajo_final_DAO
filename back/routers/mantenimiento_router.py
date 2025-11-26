@@ -6,7 +6,7 @@ router = APIRouter(prefix="/mantenimientos", tags=["Mantenimientos"])
 
 @router.post("/", response_model=MantenimientoResponse)
 def create_mantenimiento(data: MantenimientoCreate):
-    return MantenimientoService.create(data.dict())
+    return MantenimientoService.create(data.model_dump())
 
 @router.get("/", response_model=list[MantenimientoResponse])
 def get_mantenimientos():

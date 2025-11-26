@@ -6,7 +6,7 @@ router = APIRouter(prefix="/multas", tags=["Multas"])
 
 @router.post("/", response_model=MultaResponse)
 def create_multa(data: MultaCreate):
-    return MultaService.create(data.dict())
+    return MultaService.create(data.model_dump())
 
 @router.get("/", response_model=list[MultaResponse])
 def get_multas():
