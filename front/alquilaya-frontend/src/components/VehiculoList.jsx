@@ -1,20 +1,21 @@
 import React, { useState, useMemo } from "react";
 
-export default function VehiculoList({ items = [], onDelete, onEdit }) {
+// Agregamos 'onMantenimiento' a las props
+export default function VehiculoList({ items = [], onDelete, onEdit, onMantenimiento }) {
   
   // 1. Estados
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   
-  // Estado para los 3 toggles de filtro
+  // Estado para los filtros
   const [filters, setFilters] = useState({
-    disponibles: true, // Por defecto visible
-    alquilados: true,    // Incluye 'alquilado' y 'mantenimiento'
-    mantenimiento: false, // 'mantenimiento'
-    eliminados: false  // Por defecto oculto
+    disponibles: true,
+    alquilados: true,
+    mantenimiento: true, // Lo dejamos true por defecto para ver los cambios
+    eliminados: false
   });
 
-  // 2. Helper de Ordenamiento
+  // 2. Helpers
   const requestSort = (key) => {
     let direction = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -23,22 +24,20 @@ export default function VehiculoList({ items = [], onDelete, onEdit }) {
     setSortConfig({ key, direction });
   };
 
-  // Helper visual (flechita)
   const getClassNamesFor = (name) => {
     if (!sortConfig.key) return;
     return sortConfig.key === name ? sortConfig.direction : undefined;
   };
 
-  // Helper para cambiar filtros
   const toggleFilter = (key) => {
     setFilters(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // 3. Procesamiento de Datos (Filtrar y Ordenar)
+  // 3. Procesamiento de Datos
   const processedItems = useMemo(() => {
     let data = [...items];
 
-    // A. FILTRO POR ESTADO (Los 4 Toggles)
+    // A. FILTRO POR ESTADO
     data = data.filter(v => {
       const e = v.estado;
       
@@ -83,7 +82,7 @@ export default function VehiculoList({ items = [], onDelete, onEdit }) {
     }
 
     return data;
-  }, [items, searchTerm, sortConfig, filters]); // Agregamos filters
+  }, [items, searchTerm, sortConfig, filters]);
 
   return (
     <div className="card">
@@ -91,10 +90,10 @@ export default function VehiculoList({ items = [], onDelete, onEdit }) {
       <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '15px'}}>
         <h3>Vehículos ({processedItems.length})</h3>
         
-        {/* BARRA DE FILTROS Y BÚSQUEDA */}
+        {/* BARRA DE FILTROS */}
         <div style={{display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center', flex: 1, justifyContent: 'flex-end'}}>
             
-            {/* Toggle: DISPONIBLES (Verde) */}
+            {/* Disponibles */}
             <label style={{
                 display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', userSelect: 'none',
                 backgroundColor: filters.disponibles ? '#dcfce7' : '#f3f4f6',
@@ -106,7 +105,7 @@ export default function VehiculoList({ items = [], onDelete, onEdit }) {
                 {filters.disponibles ? '✓' : ''} Disponibles
             </label>
 
-            {/* Toggle: Alquilados (Azul - Alquiladoo) */}
+            {/* Alquilados */}
             <label style={{
                 display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', userSelect: 'none',
                 backgroundColor: filters.alquilados ? '#dbeafe' : '#f3f4f6',
@@ -118,19 +117,19 @@ export default function VehiculoList({ items = [], onDelete, onEdit }) {
                 {filters.alquilados ? '✓' : ''} Alquilados
             </label>
 
-            {/* Toggle: mantenimiento (Gris - Mantenimiento) */}
+            {/* Mantenimiento */}
             <label style={{
                 display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', userSelect: 'none',
-                backgroundColor: filters.mantenimiento ? '#e5e7eb' : '#f9fafb',
-                border: filters.mantenimiento ? '1px solid #9ca3af' : '1px solid #e5e7eb',
-                color: filters.mantenimiento ? '#374151' : '#6b7280',
+                backgroundColor: filters.mantenimiento ? '#f3e8ff' : '#f3f4f6',
+                border: filters.mantenimiento ? '1px solid #d8b4fe' : '1px solid #e5e7eb',
+                color: filters.mantenimiento ? '#6b21a8' : '#6b7280',
                 padding: '5px 10px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '500'
             }}>
                 <input type="checkbox" checked={filters.mantenimiento} onChange={() => toggleFilter('mantenimiento')} style={{display:'none'}} />
                 {filters.mantenimiento ? '✓' : ''} Mantenimiento
             </label>
 
-            {/* Toggle: ELIMINADOS (Rojo) */}
+            {/* Eliminados */}
             <label style={{
                 display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', userSelect: 'none',
                 backgroundColor: filters.eliminados ? '#fee2e2' : '#f3f4f6',
@@ -144,7 +143,6 @@ export default function VehiculoList({ items = [], onDelete, onEdit }) {
 
             <div style={{width: '1px', height: '20px', backgroundColor: '#ddd', margin: '0 5px'}}></div>
 
-            {/* INPUT DE BÚSQUEDA */}
             <input 
                 type="text" 
                 placeholder="🔍 Buscar..." 
@@ -162,31 +160,24 @@ export default function VehiculoList({ items = [], onDelete, onEdit }) {
         <table className="table">
           <thead>
             <tr>
-              {/* Cabeceras Interactivas */}
               <th onClick={() => requestSort('patente')} style={{cursor: 'pointer', userSelect: 'none'}}>
                 Patente {getClassNamesFor('patente') === 'asc' ? '▲' : getClassNamesFor('patente') === 'desc' ? '▼' : ''}
               </th>
-              
               <th onClick={() => requestSort('marca')} style={{cursor: 'pointer', userSelect: 'none'}}>
                 Marca {getClassNamesFor('marca') === 'asc' ? '▲' : getClassNamesFor('marca') === 'desc' ? '▼' : ''}
               </th>
-
               <th onClick={() => requestSort('modelo')} style={{cursor: 'pointer', userSelect: 'none'}}>
                 Modelo {getClassNamesFor('modelo') === 'asc' ? '▲' : getClassNamesFor('modelo') === 'desc' ? '▼' : ''}
               </th>
-
               <th onClick={() => requestSort('nombre')} style={{cursor: 'pointer', userSelect: 'none'}}>
-                Nombre {getClassNamesFor('nombre') === 'asc' ? '▲' : getClassNamesFor('nombre') === 'desc' ? '▼' : ''}
+                Categoría {getClassNamesFor('nombre') === 'asc' ? '▲' : getClassNamesFor('nombre') === 'desc' ? '▼' : ''}
               </th>
-              
               <th onClick={() => requestSort('precio_diario')} style={{cursor: 'pointer', userSelect: 'none'}}>
                 Precio {getClassNamesFor('precio_diario') === 'asc' ? '▲' : getClassNamesFor('precio_diario') === 'desc' ? '▼' : ''}
               </th>
-              
               <th onClick={() => requestSort('estado')} style={{cursor: 'pointer', userSelect: 'none'}}>
                 Estado {getClassNamesFor('estado') === 'asc' ? '▲' : getClassNamesFor('estado') === 'desc' ? '▼' : ''}
               </th>
-              
               <th>Acciones</th>
             </tr>
           </thead>
@@ -196,7 +187,12 @@ export default function VehiculoList({ items = [], onDelete, onEdit }) {
                 const isDeleted = v.estado === 'eliminado';
                 const isAlquilado = v.estado === 'alquilado';
                 const isInMaintenance = v.estado === 'mantenimiento';
-                const isDisabled = isDeleted || isAlquilado;
+                
+                // Deshabilitar botones críticos si está eliminado
+                const isCriticalDisabled = isDeleted;
+                
+                // Deshabilitar mantenimiento si está alquilado o eliminado
+                const canDoMaintenance = !isDeleted && !isAlquilado;
 
                 return (
                     <tr 
@@ -217,15 +213,17 @@ export default function VehiculoList({ items = [], onDelete, onEdit }) {
                             padding: '4px 8px', 
                             borderRadius: '4px', 
                             backgroundColor: 
-                            v.estado === 'disponible' ? '#d1fae5' : 
-                            isDeleted ? '#fee2e2' :
-                            isAlquilado ? '#e0f2fe' : 
-                            isInMaintenance ? '#E5E7EB' : 'transparent',
+                                v.estado === 'disponible' ? '#d1fae5' : 
+                                isDeleted ? '#fee2e2' :
+                                isAlquilado ? '#e0f2fe' : 
+                                isInMaintenance ? '#f3e8ff' : 'transparent', // Violeta claro para mantenimiento
 
-                            color: v.estado === 'disponible' ? '#065f46' :
-                            isDeleted ? '#991b1b' :
-                            isAlquilado ? '#075985' : 
-                            isInMaintenance ? '#364151' : 'inherit', 
+                            color: 
+                                v.estado === 'disponible' ? '#065f46' :
+                                isDeleted ? '#991b1b' :
+                                isAlquilado ? '#075985' : 
+                                isInMaintenance ? '#6b21a8' : 'inherit', 
+                            
                             fontSize: '0.85em', fontWeight: 'bold',
                             textTransform: 'capitalize',
                             border: isDeleted ? '1px solid #fecaca' : 'none'
@@ -235,16 +233,37 @@ export default function VehiculoList({ items = [], onDelete, onEdit }) {
                     </td>
                     <td>
                         <div style={{display:'flex', gap:'6px'}}>
+                            
+                            {/* BOTÓN MANTENIMIENTO (NUEVO) */}
+                            {onMantenimiento && (
+                                <button 
+                                    disabled={!canDoMaintenance}
+                                    onClick={() => onMantenimiento(v)} 
+                                    title={isInMaintenance ? "Finalizar Mantenimiento" : "Enviar a Mantenimiento"}
+                                    style={{ 
+                                        // Si está en mantenimiento: Verde (para habilitar)
+                                        // Si está disponible: Violeta (para enviar a mantenimiento)
+                                        // Si está deshabilitado: Gris
+                                        backgroundColor: !canDoMaintenance ? '#e5e7eb' : (isInMaintenance ? '#10B981' : '#8B5CF6'),
+                                        color: !canDoMaintenance ? '#9ca3af' : 'white', 
+                                        border: 'none', padding: '6px 10px', borderRadius: '4px', fontWeight: '500',
+                                        cursor: !canDoMaintenance ? 'not-allowed' : 'pointer', 
+                                    }}
+                                >
+                                    {isInMaintenance ? 'Habilitar' : 'Mantenimiento'}
+                                </button>
+                            )}
+
                             {/* BOTÓN EDITAR */}
                             <button 
-                                disabled={isDisabled} // Permitimos editar aunque esté alquilado (para cambiar precio, etc), pero no si está borrado
+                                disabled={isCriticalDisabled}
                                 onClick={() => onEdit(v)} 
                                 title="Editar Vehículo"
                                 style={{ 
-                                    backgroundColor: isDeleted ? '#e5e7eb' : "#F59E0B", 
-                                    color: isDeleted ? '#9ca3af' : 'white', 
+                                    backgroundColor: isCriticalDisabled ? '#e5e7eb' : "#F59E0B", 
+                                    color: isCriticalDisabled ? '#9ca3af' : 'white', 
                                     border: 'none', padding: '6px 10px', borderRadius: '4px', fontWeight: '500',
-                                    cursor: isDeleted ? 'not-allowed' : 'pointer', 
+                                    cursor: isCriticalDisabled ? 'not-allowed' : 'pointer', 
                                 }}
                             >
                                 Editar
@@ -252,18 +271,18 @@ export default function VehiculoList({ items = [], onDelete, onEdit }) {
 
                             {/* BOTÓN ELIMINAR */}
                             <button 
-                                disabled={isDisabled} // No eliminar si está en uso o ya eliminado
+                                disabled={isCriticalDisabled || isAlquilado || isInMaintenance}
                                 onClick={() => {
-                                    if(!isDisabled && window.confirm('¿Estás seguro de eliminar este vehículo?')) {
+                                    if(!isCriticalDisabled && window.confirm('¿Estás seguro de eliminar este vehículo?')) {
                                         onDelete(v.id_vehiculo);
                                     }
                                 }}
                                 title="Eliminar Vehículo"
                                 style={{ 
-                                    backgroundColor: isDisabled ? '#e5e7eb' : "#EF4444", 
-                                    color: isDisabled ? '#9ca3af' : 'white', 
+                                    backgroundColor: (isCriticalDisabled || isAlquilado || isInMaintenance) ? '#e5e7eb' : "#EF4444", 
+                                    color: (isCriticalDisabled || isAlquilado || isInMaintenance) ? '#9ca3af' : 'white', 
                                     border: 'none', padding: '6px 10px', borderRadius: '4px', fontWeight: '500',
-                                    cursor: isDisabled ? 'not-allowed' : 'pointer', 
+                                    cursor: (isCriticalDisabled || isAlquilado || isInMaintenance) ? 'not-allowed' : 'pointer', 
                                 }}
                             >
                                 Eliminar

@@ -215,7 +215,7 @@ export default function Dashboard() {
           <ul style={{listStyle: "none", padding: 0, maxHeight: 170, overflow: "auto"}}>
             {Object.entries(
               alquileres.reduce((acc, alq) => {
-                if (!["eliminado", "cancelado"].includes(alq.estado)) {
+                if (["confirmado", "activo", "finalizado"].includes(alq.estado)) {
                   acc[alq.id_cliente] = (acc[alq.id_cliente] || 0) + 1;
                 }
                 return acc;

@@ -207,10 +207,10 @@ export default function VehiculoForm({ onSubmit, initialData = null, onCancel })
                 required 
                 style={{flex: 1}}
             />
-            <select name="estado" value={form.estado} onChange={changeField} style={{flex: 1}}>
+            {/*<select name="estado" value={form.estado} onChange={changeField} style={{flex: 1}}>
                 <option value="disponible">Disponible</option>
                 <option value="mantenimiento">Mantenimiento</option>
-            </select>
+            </select>*/}
         </div>
       </div>
 

@@ -114,6 +114,7 @@ class ReportesService:
             SELECT c.nombre, c.apellido, c.dni, COUNT(a.id_alquiler) as cantidad
             FROM Clientes c
             LEFT JOIN Alquileres a ON c.id_cliente = a.id_cliente
+            WHERE a.estado IN ('finalizado', 'confirmado', 'activo')
             GROUP BY c.id_cliente
             ORDER BY cantidad DESC, c.apellido ASC
         """
@@ -147,7 +148,7 @@ class ReportesService:
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
             ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
             ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.whitesmoke, colors.beige]),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.whitesmoke, colors.lightgrey]),
         ])
         t.setStyle(estilo_tabla)
 
@@ -271,6 +272,8 @@ class ReportesService:
             ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
             ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.whitesmoke, colors.lightgrey])
         ])
         t.setStyle(estilo_tabla)
         elements.append(t)
@@ -367,7 +370,7 @@ class ReportesService:
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
             ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.whitesmoke, colors.lavender]),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.whitesmoke, colors.lightgrey]),
         ])
         t.setStyle(estilo_tabla)
         elements.append(t)
