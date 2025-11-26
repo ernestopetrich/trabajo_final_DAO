@@ -30,7 +30,7 @@ class ConnectionWrapper:
         return getattr(self.original_connection, name)
 
 # --- FIXTURE DE BASE DE DATOS ---
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(scope="function")
 def test_db():
     """
     Crea una base de datos SQLite en memoria para cada test.
