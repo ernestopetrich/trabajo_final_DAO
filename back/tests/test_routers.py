@@ -96,7 +96,7 @@ def test_get_vehiculo_not_found(mock_get_by_id):
 @patch('services.vehiculo_service.VehiculoService.delete')
 def test_delete_vehiculo(mock_delete):
     mock_delete.return_value = True
-    response = client.delete("/vehiculos/1")
+    response = client.put("/vehiculos/1/delete")
     assert response.status_code == 200
 
 

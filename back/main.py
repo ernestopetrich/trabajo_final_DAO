@@ -157,6 +157,7 @@ def setup_database():
             fecha_fin_prevista=(noviembre + timedelta(days=12)).isoformat(timespec='seconds'),
             estado="activo"
         )
+        VehiculoService.update_estado(2, "alquilado")
 
         # ============================================================
         # 3) SEPTIEMBRE — FINALIZADO — con daño
@@ -265,7 +266,7 @@ def setup_database():
 
         AlquilerModel.create_raw(
             id_cliente=1,
-            id_vehiculo=2,
+            id_vehiculo=3,
             id_empleado=1,
             fecha_inicio=nov.isoformat(timespec='seconds'),
             fecha_fin_prevista=(nov + timedelta(days=3)).isoformat(timespec='seconds'),
