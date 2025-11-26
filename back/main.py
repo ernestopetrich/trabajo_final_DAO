@@ -27,6 +27,11 @@ from models.multa import Multa as MultaModel
 from models.danio import Danio as DanioModel
 from models.factura import Factura as FacturaModel
 from models.detalle_factura import DetalleFactura as DetalleFacturaModel
+from services.vehiculo_service import VehiculoService
+from services.multa_service import MultaService
+from services.danio_service import DanioService
+from services.factura_service import FacturaService
+from services.detalle_factura_service import DetalleFacturaService
 
 
 
@@ -80,11 +85,10 @@ def setup_database():
         VehiculoModel.create("AC456DD", "Toyota", "2024", "Corolla", 22000.0)
         VehiculoModel.create("AE789FF", "VW", "2023", "Amarok", 35000.0)
         
-        # Crear alquileres de ejemplo con distintos estados
         # ============================================================
         # 1) JUNIO — FINALIZADO — con multa
         # ============================================================
-        junio = datetime(2024, 6, 10, 9, 0, 0)
+        junio = datetime(2025, 6, 10, 9, 0, 0)
 
         alq_junio = AlquilerModel.create_raw(
             id_cliente=1,
@@ -97,6 +101,7 @@ def setup_database():
         )
 
         if alq_junio:
+            # Crear multa
             MultaModel.create(
                 id_alquiler=alq_junio.id_alquiler,
                 descripcion="Estacionar en lugar prohibido",
@@ -104,38 +109,59 @@ def setup_database():
                 fecha_hora_multa=(junio + timedelta(days=1, hours=3)).isoformat(timespec='seconds')
             )
 
-        if alq_junio:
-            fac = FacturaModel.create(
-                id_alquiler=alq_junio.id_alquiler,
-                fecha_hora_emision=junio.isoformat(timespec="seconds"),
-                monto_total=alq_junio.costo_total or 30000
-            )
+            # Calcular costo total (incluye alquiler + multa)
+            costo = alq_junio.calcular_y_guardar_costo()
+            cantidad_dias = alq_junio.calcular_dias_alquiler()
+            
+            vehiculo = VehiculoService.get_by_id(alq_junio.id_vehiculo)
+            precio_diario = vehiculo.precio_diario
+            
+            # Crear factura
+            fac = FacturaService.create({
+                "id_alquiler": alq_junio.id_alquiler,
+                "fecha_hora_emision": junio.isoformat(timespec='seconds'),
+                "monto_total": costo,
+                "estado_pago": "abonado"
+            })
 
             if fac:
-                DetalleFacturaModel.create(
-                    id_factura=fac.id_factura,
-                    descripcion=f"Alquiler vehículo {alq_junio.id_vehiculo}",
-                    monto=fac.monto_total
-                )
+                # Detalle 1: Alquiler (precio unitario × cantidad de días)
+                DetalleFacturaService.create({
+                    "id_factura": fac.id_factura,
+                    "descripcion": f"Alquiler vehículo {vehiculo.marca} {vehiculo.nombre} {vehiculo.modelo} ({vehiculo.patente})",
+                    "cantidad": cantidad_dias,
+                    "monto": precio_diario
+                })
+                
+                # Detalle 2: Multa
+                multas = MultaService.get_by_id_alquiler(alq_junio.id_alquiler)
+                if multas:
+                    for multa in multas:
+                        DetalleFacturaService.create({
+                            "id_factura": fac.id_factura,
+                            "descripcion": f"Multa: {multa.descripcion}",
+                            "cantidad": 1,
+                            "monto": multa.monto
+                        })
 
         # ============================================================
-        # 2) JULIO — ACTIVO — sin multa ni daño
+        # 2) Noviembre — ACTIVO
         # ============================================================
-        julio = datetime(2024, 7, 5, 14, 0, 0)
+        noviembre = datetime(2025, 11, 15, 14, 0, 0)
 
         AlquilerModel.create_raw(
             id_cliente=2,
             id_vehiculo=2,
             id_empleado=1,
-            fecha_inicio=julio.isoformat(timespec='seconds'),
-            fecha_fin_prevista=(julio + timedelta(days=3)).isoformat(timespec='seconds'),
+            fecha_inicio=noviembre.isoformat(timespec='seconds'),
+            fecha_fin_prevista=(noviembre + timedelta(days=12)).isoformat(timespec='seconds'),
             estado="activo"
         )
 
         # ============================================================
         # 3) SEPTIEMBRE — FINALIZADO — con daño
         # ============================================================
-        sept1 = datetime(2024, 9, 1, 11, 0, 0)
+        sept1 = datetime(2025, 9, 1, 11, 0, 0)
 
         alq_sep1 = AlquilerModel.create_raw(
             id_cliente=1,
@@ -148,54 +174,281 @@ def setup_database():
         )
 
         if alq_sep1:
+            # Crear daño
             DanioModel.create(
                 id_alquiler=alq_sep1.id_alquiler,
                 descripcion="Rotura en espejo lateral",
-                costo_reparacion=30000,
+                costo_reparacion=20000,
                 fecha_hora_reporte=(sept1 + timedelta(days=1, hours=1)).isoformat(timespec='seconds')
             )
-        
-        if alq_sep1:
-            fac = FacturaModel.create(
-                id_alquiler=alq_sep1.id_alquiler,
-                fecha_hora_emision=sept1.isoformat(timespec="seconds"),
-                monto_total=alq_sep1.costo_total or 55000
-            )
+            
+            # Calcular costo total (incluye alquiler + daño)
+            costo = alq_sep1.calcular_y_guardar_costo()
+            cantidad_dias = alq_sep1.calcular_dias_alquiler()
+            
+            vehiculo = VehiculoService.get_by_id(alq_sep1.id_vehiculo)
+            precio_diario = vehiculo.precio_diario
+            
+            # Crear factura
+            fac = FacturaService.create({
+                "id_alquiler": alq_sep1.id_alquiler,
+                "fecha_hora_emision": sept1.isoformat(timespec='seconds'),
+                "monto_total": costo,
+                "estado_pago": "abonado"
+            })
+            
             if fac:
-                DetalleFacturaModel.create(
-                    id_factura=fac.id_factura,
-                    descripcion="Alquiler con daño",
-                    monto=fac.monto_total
-                )
+                # Detalle 1: Alquiler (precio unitario × cantidad de días)
+                DetalleFacturaService.create({
+                    "id_factura": fac.id_factura,
+                    "descripcion": f"Alquiler vehículo {vehiculo.marca} {vehiculo.nombre} {vehiculo.modelo} ({vehiculo.patente})",
+                    "cantidad": cantidad_dias,
+                    "monto": precio_diario
+                })
+                
+                # Detalle 2: Daño
+                danios = DanioService.get_by_id_alquiler(alq_sep1.id_alquiler)
+                if danios:
+                    for danio in danios:
+                        DetalleFacturaService.create({
+                            "id_factura": fac.id_factura,
+                            "descripcion": f"Daño: {danio.descripcion}",
+                            "cantidad": 1,
+                            "monto": danio.costo_reparacion
+                        })
 
 
         # ============================================================
-        # 4) SEPTIEMBRE (otro) — PENDIENTE
+        # 4) SEPTIEMBRE — FINALIZADO — sin multa ni daño
         # ============================================================
-        sept2 = datetime(2024, 9, 20, 10, 30, 0)
+        sept2 = datetime(2025, 9, 20, 10, 30, 0)
 
-        AlquilerModel.create_raw(
+        alq_sept2 = AlquilerModel.create_raw(
             id_cliente=2,
             id_vehiculo=1,
             id_empleado=1,
             fecha_inicio=sept2.isoformat(timespec='seconds'),
             fecha_fin_prevista=(sept2 + timedelta(days=2)).isoformat(timespec='seconds'),
-            estado="pendiente"
+            fecha_fin_real=(sept2 + timedelta(days=2)).isoformat(timespec='seconds'),
+            estado="finalizado"
         )
 
+        if alq_sept2:
+            # Calcular costo total (solo alquiler, sin multas/daños)
+            costo = alq_sept2.calcular_y_guardar_costo()
+            cantidad_dias = alq_sept2.calcular_dias_alquiler()
+            
+            vehiculo = VehiculoService.get_by_id(alq_sept2.id_vehiculo)
+            precio_diario = vehiculo.precio_diario
+            
+            # Crear factura
+            fac = FacturaService.create({
+                "id_alquiler": alq_sept2.id_alquiler,
+                "fecha_hora_emision": sept2.isoformat(timespec='seconds'),
+                "monto_total": costo,
+                "estado_pago": "abonado"
+            })
+            
+            if fac:
+                # Detalle: Alquiler (precio unitario × cantidad de días)
+                DetalleFacturaService.create({
+                    "id_factura": fac.id_factura,
+                    "descripcion": f"Alquiler vehículo {vehiculo.marca} {vehiculo.nombre} {vehiculo.modelo} ({vehiculo.patente})",
+                    "cantidad": cantidad_dias,
+                    "monto": precio_diario
+                })
+
         # ============================================================
-        # 5) OCTUBRE — CONFIRMADO — reserva lista para retirar
+        # 5) Noviembre — CONFIRMADO — reserva lista para retirar
         # ============================================================
-        octu = datetime(2024, 10, 12, 8, 0, 0)
+        nov = datetime(2025, 11, 26, 8, 0, 0)
 
         AlquilerModel.create_raw(
             id_cliente=1,
             id_vehiculo=2,
             id_empleado=1,
-            fecha_inicio=octu.isoformat(timespec='seconds'),
-            fecha_fin_prevista=(octu + timedelta(days=3)).isoformat(timespec='seconds'),
+            fecha_inicio=nov.isoformat(timespec='seconds'),
+            fecha_fin_prevista=(nov + timedelta(days=3)).isoformat(timespec='seconds'),
             estado="confirmado"
         )
+
+        # ============================================================
+        # NUEVOS ALQUILERES SOLICITADOS
+        # 1) SEPTIEMBRE — FINALIZADO — sin multa ni daño
+        # ============================================================
+        sept_extra = datetime(2025, 9, 10, 9, 0, 0)
+
+        alq_sep_extra = AlquilerModel.create_raw(
+            id_cliente=2,
+            id_vehiculo=2,
+            id_empleado=1,
+            fecha_inicio=sept_extra.isoformat(timespec='seconds'),
+            fecha_fin_prevista=(sept_extra + timedelta(days=2)).isoformat(timespec='seconds'),
+            fecha_fin_real=(sept_extra + timedelta(days=2, hours=1)).isoformat(timespec='seconds'),
+            estado="finalizado"
+        )
+
+        if alq_sep_extra:
+            # Calcular costo total (sin multas/daños, solo alquiler)
+            costo = alq_sep_extra.calcular_y_guardar_costo()
+            cantidad_dias = alq_sep_extra.calcular_dias_alquiler()
+            
+            vehiculo = VehiculoService.get_by_id(alq_sep_extra.id_vehiculo)
+            precio_diario = vehiculo.precio_diario
+            
+            # Crear factura
+            fac = FacturaService.create({
+                "id_alquiler": alq_sep_extra.id_alquiler,
+                "fecha_hora_emision": sept_extra.isoformat(timespec='seconds'),
+                "monto_total": costo,
+                "estado_pago": "abonado"
+            })
+            
+            if fac:
+                # Detalle: precio unitario × cantidad de días
+                DetalleFacturaService.create({
+                    "id_factura": fac.id_factura,
+                    "descripcion": f"Alquiler vehículo {vehiculo.marca} {vehiculo.nombre} {vehiculo.modelo} ({vehiculo.patente})",
+                    "cantidad": cantidad_dias,
+                    "monto": precio_diario
+                })
+
+        # ============================================================
+        # 2) OCTUBRE — FINALIZADO — con multa y daño
+        # ============================================================
+        oct_extra1 = datetime(2025, 10, 15, 10, 0, 0)
+
+        alq_oct_extra1 = AlquilerModel.create_raw(
+            id_cliente=1,
+            id_vehiculo=1,
+            id_empleado=1,
+            fecha_inicio=oct_extra1.isoformat(timespec='seconds'),
+            fecha_fin_prevista=(oct_extra1 + timedelta(days=3)).isoformat(timespec='seconds'),
+            fecha_fin_real=(oct_extra1 + timedelta(days=3, hours=2)).isoformat(timespec='seconds'),
+            estado="finalizado"
+        )
+
+        if alq_oct_extra1:
+            # Crear multa
+            MultaModel.create(
+                id_alquiler=alq_oct_extra1.id_alquiler,
+                descripcion="Exceso de velocidad detectado",
+                monto=15000,
+                fecha_hora_multa=(oct_extra1 + timedelta(days=1, hours=2)).isoformat(timespec='seconds')
+            )
+
+            # Crear daño
+            DanioModel.create(
+                id_alquiler=alq_oct_extra1.id_alquiler,
+                descripcion="Golpe en paragolpes delantero",
+                costo_reparacion=45000,
+                fecha_hora_reporte=(oct_extra1 + timedelta(days=3, hours=3)).isoformat(timespec='seconds')
+            )
+
+            # Calcular costo total (incluye alquiler + multa + daño)
+            costo = alq_oct_extra1.calcular_y_guardar_costo()
+            cantidad_dias = alq_oct_extra1.calcular_dias_alquiler()
+            
+            vehiculo = VehiculoService.get_by_id(alq_oct_extra1.id_vehiculo)
+            precio_diario = vehiculo.precio_diario
+            
+            # Crear factura
+            fac = FacturaService.create({
+                "id_alquiler": alq_oct_extra1.id_alquiler,
+                "fecha_hora_emision": oct_extra1.isoformat(timespec='seconds'),
+                "monto_total": costo,
+                "estado_pago": "abonado"
+            })
+            
+            if fac:
+                # Detalle 1: Alquiler (precio unitario × cantidad de días)
+                DetalleFacturaService.create({
+                    "id_factura": fac.id_factura,
+                    "descripcion": f"Alquiler vehículo {vehiculo.marca} {vehiculo.nombre} {vehiculo.modelo} ({vehiculo.patente})",
+                    "cantidad": cantidad_dias,
+                    "monto": precio_diario
+                })
+                
+                # Detalle 2: Multa
+                multas = MultaService.get_by_id_alquiler(alq_oct_extra1.id_alquiler)
+                if multas:
+                    for multa in multas:
+                        DetalleFacturaService.create({
+                            "id_factura": fac.id_factura,
+                            "descripcion": f"Multa: {multa.descripcion}",
+                            "cantidad": 1,
+                            "monto": multa.monto
+                        })
+                
+                # Detalle 3: Daño
+                danios = DanioService.get_by_id_alquiler(alq_oct_extra1.id_alquiler)
+                if danios:
+                    for danio in danios:
+                        DetalleFacturaService.create({
+                            "id_factura": fac.id_factura,
+                            "descripcion": f"Daño: {danio.descripcion}",
+                            "cantidad": 1,
+                            "monto": danio.costo_reparacion
+                        })
+
+        # ============================================================
+        # 3) OCTUBRE — FINALIZADO — sólo con daño
+        # ============================================================
+        oct_extra2 = datetime(2025, 10, 22, 8, 0, 0)
+
+        alq_oct_extra2 = AlquilerModel.create_raw(
+            id_cliente=2,
+            id_vehiculo=3,
+            id_empleado=1,
+            fecha_inicio=oct_extra2.isoformat(timespec='seconds'),
+            fecha_fin_prevista=(oct_extra2 + timedelta(days=1)).isoformat(timespec='seconds'),
+            fecha_fin_real=(oct_extra2 + timedelta(days=1, hours=1)).isoformat(timespec='seconds'),
+            estado="finalizado"
+        )
+
+        if alq_oct_extra2:
+            # Crear daño
+            DanioModel.create(
+                id_alquiler=alq_oct_extra2.id_alquiler,
+                descripcion="Rasguño lateral puerta izquierda",
+                costo_reparacion=20000,
+                fecha_hora_reporte=(oct_extra2 + timedelta(days=1, hours=2)).isoformat(timespec='seconds')
+            )
+
+            # Calcular costo total (incluye alquiler + daño, sin multa)
+            costo = alq_oct_extra2.calcular_y_guardar_costo()
+            cantidad_dias = alq_oct_extra2.calcular_dias_alquiler()
+            
+            vehiculo = VehiculoService.get_by_id(alq_oct_extra2.id_vehiculo)
+            precio_diario = vehiculo.precio_diario
+            
+            # Crear factura
+            fac = FacturaService.create({
+                "id_alquiler": alq_oct_extra2.id_alquiler,
+                "fecha_hora_emision": oct_extra2.isoformat(timespec='seconds'),
+                "monto_total": costo,
+                "estado_pago": "abonado"
+            })
+            
+            if fac:
+                # Detalle 1: Alquiler (precio unitario × cantidad de días)
+                DetalleFacturaService.create({
+                    "id_factura": fac.id_factura,
+                    "descripcion": f"Alquiler vehículo {vehiculo.marca} {vehiculo.nombre} {vehiculo.modelo} ({vehiculo.patente})",
+                    "cantidad": cantidad_dias,
+                    "monto": precio_diario
+                })
+                
+                # Detalle 2: Daño
+                danios = DanioService.get_by_id_alquiler(alq_oct_extra2.id_alquiler)
+                if danios:
+                    for danio in danios:
+                        DetalleFacturaService.create({
+                            "id_factura": fac.id_factura,
+                            "descripcion": f"Daño: {danio.descripcion}",
+                            "cantidad": 1,
+                            "monto": danio.costo_reparacion
+                        })
 
         print("Alquileres de ejemplo generados correctamente.")
 

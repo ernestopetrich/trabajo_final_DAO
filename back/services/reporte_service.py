@@ -382,7 +382,7 @@ class ReportesService:
     @staticmethod
     def reporte_facturacion_mensual():
         """
-        Genera un reporte de barras con la facturación total por mes.
+        Genera un reporte de barras con la facturación total por mes (CON IMPUESTOS INCLUIDOS).
         """
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
@@ -392,14 +392,14 @@ class ReportesService:
         # 1. Título
         title_style = styles['Heading1']
         title_style.alignment = 1
-        elements.append(Paragraph("Facturación Total Mensual", title_style))
+        elements.append(Paragraph("Facturación Total Mensual (Con Impuestos)", title_style))
         elements.append(Spacer(1, 20))
 
-        # 2. Consulta SQL (Agrupado por Mes sobre Facturas)
+        # 2. Consulta SQL (Agrupado por Mes sobre Facturas, con impuestos al 21%)
         conn = Database().get_connection()
         cursor = conn.cursor()
         query = """
-            SELECT strftime('%Y-%m', fecha_hora_emision) as mes, SUM(monto_total) as total
+            SELECT strftime('%Y-%m', fecha_hora_emision) as mes, SUM(monto_total * 1.21) as total
             FROM Facturas
             GROUP BY mes
             ORDER BY mes ASC
@@ -417,7 +417,7 @@ class ReportesService:
         # 3. Preparar datos
         meses = []
         montos = []
-        table_data = [['Mes', 'Facturación Total']]
+        table_data = [['Mes', 'Facturación Total (con IVA 21%)']]
 
         for row in resultados:
             meses.append(row['mes'])
@@ -470,7 +470,7 @@ class ReportesService:
         # Total global al pie
         total_global = sum(montos)
         elements.append(Spacer(1, 20))
-        elements.append(Paragraph(f"<b>Facturación Histórica Total:</b> ${total_global:,.2f}", styles['Normal']))
+        elements.append(Paragraph(f"<b>Facturación Histórica Total (con IVA 21%):</b> ${total_global:,.2f}", styles['Normal']))
 
         doc.build(elements)
         buffer.seek(0)

@@ -74,7 +74,8 @@ export default function Dashboard() {
       const fecha = a.fecha_hora_fin_real || a.fecha_hora_fin_prevista || a.fecha_hora_inicio;
       if (!fecha) return;
       const key = fecha.slice(0,7);
-      monthlyMoney[key] = (monthlyMoney[key] || 0) + (a.costo_total || 0);
+      // Incluir impuestos: monto_total * 1.21 (21% IVA)
+      monthlyMoney[key] = (monthlyMoney[key] || 0) + ((a.costo_total || 0) * 1.21);
     });
 
     const labelsFact = Object.keys(monthlyMoney).sort();
@@ -86,7 +87,7 @@ export default function Dashboard() {
         data: {
           labels: labelsFact.length ? labelsFact : ["Sin datos"],
           datasets: [{
-            label: "Facturación ($)",
+            label: "Facturación ($ con IVA 21%)",
             data: dataFact.length ? dataFact : [0],
             backgroundColor: "rgba(54,162,235,0.6)",
             borderColor: "rgba(54,162,235,1)",
