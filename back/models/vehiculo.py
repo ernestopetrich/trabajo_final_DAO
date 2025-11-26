@@ -68,15 +68,17 @@ class Vehiculo:
             return Vehiculo(*row)
         return None
 
-    def update_estado(self, nuevo_estado):
+
+    @staticmethod
+    def update_estado(id_vehiculo, nuevo_estado):
         """Actualiza el estado del vehículo (ej. 'disponible', 'alquilado')."""
         conn = Database().get_connection()
         cursor = conn.cursor()
-        cursor.execute("UPDATE Vehiculos SET estado = ? WHERE id_vehiculo = ?", (nuevo_estado, self.id_vehiculo))
+        cursor.execute("UPDATE Vehiculos SET estado = ? WHERE id_vehiculo = ?", (nuevo_estado, id_vehiculo))
         conn.commit()
         conn.close()
-        self.estado = nuevo_estado
-        print(f"Estado de {self.patente} actualizado a: {nuevo_estado}")
+        print(f"Estado de vehículo {id_vehiculo} actualizado a: {nuevo_estado}")
+        return Vehiculo.get_by_id(id_vehiculo)
 
     def is_available(self, fecha_inicio, fecha_fin):
         """

@@ -44,7 +44,7 @@ export const getVehiculos = () => API.get("/vehiculos/");
 export const getVehiculo = (id) => API.get(`/vehiculos/${id}`);
 export const createVehiculo = (payload) => API.post("/vehiculos/", payload);
 export const updateVehiculo = (id, payload) => API.put(`/vehiculos/${id}`, payload);
-export const deleteVehiculo = (id) => API.delete(`/vehiculos/${id}`);
+export const deleteVehiculo = (id) => API.put(`/vehiculos/${id}/delete`);
 
 // Alquileres
 export const getAlquileres = () => API.get("/alquileres/");

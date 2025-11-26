@@ -53,6 +53,12 @@ export default function Alquileres(){
   }
 
   async function handleUpdate(formData){
+    delete formData.id_alquiler; // Evitar modificar el ID
+    delete formData.estado; // Evitar modificar estado aquí
+    delete formData.clienteNombre;
+    delete formData.vehiculoNombre;
+    delete formData.diasCobrados;
+    delete formData.precioTotal;
     await updateAlquiler(editingAlquiler.id_alquiler, formData);
     setEditingAlquiler(null);
     load();

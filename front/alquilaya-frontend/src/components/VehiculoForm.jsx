@@ -131,8 +131,10 @@ export default function VehiculoForm({ onSubmit, initialData = null, onCancel })
     }
 
     const precioNum = Number(precio_diario);
-    if (!precio_diario || Number.isNaN(precioNum)) {
-      setError("El precio diario debe ser un número válido.");
+        
+    // Verificamos que sea número, que no esté vacío y que sea mayor a 0
+    if (!precio_diario || Number.isNaN(precioNum) || precioNum <= 0) {
+      setError("El precio diario debe ser un número mayor a 0.");
       return;
     }
 
@@ -203,14 +205,10 @@ export default function VehiculoForm({ onSubmit, initialData = null, onCancel })
                 onChange={changeField} 
                 placeholder="Precio diario" 
                 type="number" 
-                step="any" 
+                step="0.01" 
                 required 
                 style={{flex: 1}}
             />
-            {/*<select name="estado" value={form.estado} onChange={changeField} style={{flex: 1}}>
-                <option value="disponible">Disponible</option>
-                <option value="mantenimiento">Mantenimiento</option>
-            </select>*/}
         </div>
       </div>
 

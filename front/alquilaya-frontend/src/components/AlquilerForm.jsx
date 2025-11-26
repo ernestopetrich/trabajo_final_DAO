@@ -153,11 +153,13 @@ export default function AlquilerForm({ onSubmit, clientes = [], vehiculos = [], 
 
           <select name="id_empleado" value={form.id_empleado} onChange={change} required style={{flex: 1}}>
             <option value="">Seleccione Empleado</option>
-            {empleados.map(e => (
+            {empleados.map(e => {
+              if (e.activo === false) return null;
+              return (
                 <option key={e.id_empleado} value={e.id_empleado}>
                     {e.nombre} {e.apellido}
                 </option>
-            ))}
+            )})}
           </select>
       </div>
 

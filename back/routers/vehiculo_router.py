@@ -21,12 +21,12 @@ def get_vehiculo(id_vehiculo: int):
 
 @router.put("/{id_vehiculo}", response_model=VehiculoResponse)
 def update_vehiculo(id_vehiculo: int, data: VehiculoUpdate):
-    actualizado = VehiculoService.update(id_vehiculo, data.dict())
+    actualizado = VehiculoService.update(id_vehiculo, data.model_dump())
     if not actualizado:
         raise HTTPException(400, "No se pudo actualizar")
     return actualizado
 
-@router.delete("/{id_vehiculo}")
+@router.put("/{id_vehiculo}/delete")
 def delete(id_vehiculo: int):
     eliminado = VehiculoService.delete(id_vehiculo)
     if not eliminado:

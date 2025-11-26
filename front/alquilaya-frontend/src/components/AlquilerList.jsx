@@ -172,7 +172,7 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
         )}
 
         {/* Editar (Solo si no está finalizado/eliminado) */}
-        {onEdit && s !== 'finalizado' && s !== 'devuelto' && s !== 'eliminado' && (
+        {onEdit && s !== 'finalizado' && s !== 'confirmado' && s !== 'eliminado' && (
             <button style={{...btnBase, backgroundColor: '#F59E0B'}} onClick={() => onEdit(alquiler)}>
                 Editar
             </button>
