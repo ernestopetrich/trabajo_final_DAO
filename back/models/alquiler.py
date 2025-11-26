@@ -289,7 +289,8 @@ class Alquiler:
             v = VehiculoService.get_by_id(fields['id_vehiculo'])
 
         if v.is_available(fields.get('fecha_hora_inicio', Alquiler.get_by_id(id_alquiler).fecha_hora_inicio),
-                          fields.get('fecha_hora_fin_prevista', Alquiler.get_by_id(id_alquiler).fecha_hora_fin_prevista)) == False:
+                          fields.get('fecha_hora_fin_prevista', Alquiler.get_by_id(id_alquiler).fecha_hora_fin_prevista),
+                          exclude_alquiler_id=id_alquiler) == False:
             print("Error: El vehículo no está disponible en las fechas solicitadas.")
             conn.close()
             return None

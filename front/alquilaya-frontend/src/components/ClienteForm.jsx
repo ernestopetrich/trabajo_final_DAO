@@ -85,7 +85,7 @@ export default function ClienteForm({onSubmit, initialData = null, onCancel}){
             name="dni" 
             value={form.dni} 
             onChange={change} 
-            placeholder="DNI (Solo números)" 
+            placeholder="(Solo números)" 
             required 
             style={{
                 width: '100%',

@@ -80,58 +80,44 @@ class Vehiculo:
         print(f"Estado de vehículo {id_vehiculo} actualizado a: {nuevo_estado}")
         return Vehiculo.get_by_id(id_vehiculo)
 
-    def is_available(self, fecha_inicio, fecha_fin):
+    def is_available(self, fecha_inicio, fecha_fin, exclude_alquiler_id=None):
         """
-        Verifica la disponibilidad del vehículo en un rango de fechas.
-        Permite reservar a futuro aunque el auto esté alquilado hoy.
-        Bloquea solo si hay solapamiento de fechas.
+        Verifica disponibilidad.
+        :param exclude_alquiler_id: ID del alquiler actual (si estamos editando) para ignorarlo en el chequeo.
+                                    Si es None o -1, se asume creación nueva.
         """
-        # 1. Bloqueo físico real: Si está roto o dado de baja, no se puede usar nunca.
-        # (Quitamos el bloqueo por 'alquilado' o 'reservado', eso lo chequean las fechas)
+        # 1. Bloqueo físico
         if self.estado in ['mantenimiento', 'baja', 'inactivo', 'eliminado']:
             return False
             
         conn = Database().get_connection()
         cursor = conn.cursor()
 
-        # Lógica de Superposición (Overlap):
-        # Existe conflicto si: (InicioSolicitado < FinExistente) AND (FinSolicitado > InicioExistente)
-        # Esta fórmula cubre todos los casos: cruces parciales, totales o que uno esté dentro del otro.
+        # Si no pasaron ID (es creación), usamos -1 para que la query SQL no falle
+        id_a_excluir = exclude_alquiler_id if exclude_alquiler_id is not None else -1
 
-        # 2. Chequear conflicto con Alquileres ACTIVOS
+        # 2. Chequear conflicto con Tabla ALQUILERES
+        # (Excluyendo el alquiler propio con 'AND id_alquiler != ?')
         cursor.execute(
             """
             SELECT COUNT(*) FROM Alquileres
             WHERE id_vehiculo = ?
-            AND estado = 'activo'
+            AND id_alquiler != ?
+            AND estado IN ('activo', 'pendiente') -- Chequeamos ambos estados activos
             AND (fecha_hora_inicio < ? AND fecha_hora_fin_prevista > ?)
             """,
-            (self.id_vehiculo, fecha_fin, fecha_inicio)
+            (self.id_vehiculo, id_a_excluir, fecha_fin, fecha_inicio)
         )
         alquileres_count = cursor.fetchone()[0]
         
         if alquileres_count > 0:
-            print(f"Vehículo {self.patente} ocupado por {alquileres_count} alquiler(es) en esas fechas.")
+            print(f"Vehículo {self.patente} ocupado por {alquileres_count} alquiler(es).")
             conn.close()
             return False 
 
-        # 3. Chequear conflicto con Alquileres PENDIENTES o CONFIRMADAS
-        cursor.execute(
-            """
-            SELECT COUNT(*) FROM Alquileres
-            WHERE id_vehiculo = ?
-            AND estado IN ('pendiente', 'confirmada')
-            AND (fecha_hora_inicio < ? AND fecha_hora_fin_prevista > ?)
-            """,
-            (self.id_vehiculo, fecha_fin, fecha_inicio)
-        )
-        reservas_count = cursor.fetchone()[0]
-        
-        if reservas_count > 0:
-            print(f"Vehículo {self.patente} ocupado por {reservas_count} reserva(s) en esas fechas.")
-        
         conn.close()
-        return reservas_count == 0 
+        return alquileres_count == 0 
+
 
 
     @staticmethod
