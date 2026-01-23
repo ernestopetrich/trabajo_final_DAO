@@ -476,4 +476,6 @@ app.include_router(reportes_router)
 # --- RUN SERVER ---
 if __name__ == "__main__":
     setup_database()
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("main:app", host="127.0.0.1", port=port, reload=True)
