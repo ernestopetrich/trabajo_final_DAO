@@ -141,7 +141,8 @@ export default function AlquilerForm({ onSubmit, clientes = [], vehiculos = [], 
       <div style={{display: 'flex', gap: '10px'}}>
           <select name="id_cliente" value={form.id_cliente} onChange={change} required style={{flex: 1}}>
             <option value="">Seleccione Cliente</option>
-            {clientes.map(c => {
+            {/* AGREGAMOS LA VERIFICACIÓN AQUÍ */}
+            {Array.isArray(clientes) && clientes.map(c => {
               if (c.estado === 'eliminado') return null;
               return (
                 <option key={c.id_cliente} value={c.id_cliente}>
@@ -153,7 +154,8 @@ export default function AlquilerForm({ onSubmit, clientes = [], vehiculos = [], 
 
           <select name="id_empleado" value={form.id_empleado} onChange={change} required style={{flex: 1}}>
             <option value="">Seleccione Empleado</option>
-            {empleados.map(e => {
+            {/* AGREGAMOS LA VERIFICACIÓN AQUÍ */}
+            {Array.isArray(empleados) && empleados.map(e => {
               if (e.activo === false) return null;
               return (
                 <option key={e.id_empleado} value={e.id_empleado}>
@@ -166,8 +168,9 @@ export default function AlquilerForm({ onSubmit, clientes = [], vehiculos = [], 
       {/* Vehículo */}
       <select name="id_vehiculo" value={form.id_vehiculo} onChange={change} required>
         <option value="">Seleccione Vehículo</option>
-        {vehiculos.map(v => {
-          // Mostramos el vehículo si está disponible O si es el que ya tiene este alquiler (para que no desaparezca al editar)
+        {/* AGREGAMOS LA VERIFICACIÓN AQUÍ */}
+        {Array.isArray(vehiculos) && vehiculos.map(v => {
+          // ... tu lógica de filtrado ...
           const isSameVehicle = initialData && String(v.id_vehiculo) === String(initialData.id_vehiculo);
           if (v.estado !== 'disponible' && !isSameVehicle) return null;
 

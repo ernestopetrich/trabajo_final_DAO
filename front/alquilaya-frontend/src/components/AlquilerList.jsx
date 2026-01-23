@@ -2,6 +2,12 @@ import React, { useState, useMemo } from "react";
 
 export default function AlquilerList({ items = [], vehiculos = [], clientes = [], onDevolver, onDelete, onEdit, onStateChange, onViewFactura }) {
   
+
+  const safeItems = Array.isArray(items) ? items : [];
+  const safeVehiculos = Array.isArray(vehiculos) ? vehiculos : [];
+  const safeClientes = Array.isArray(clientes) ? clientes : [];
+
+
   // 1. Estados
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: 'id_alquiler', direction: 'desc' });
@@ -32,17 +38,17 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
   };
 
   const getPrecioVehiculo = (id) => {
-    const v = vehiculos.find(x => x.id_vehiculo === id);
+    const v = safeVehiculos.find(x => x.id_vehiculo === id);
     return v ? Number(v.precio_diario || 0) : 0;
   };
 
   const getClienteNombre = (id) => {
-    const c = clientes.find(x => x.id_cliente === id);
+    const c = safeClientes.find(x => x.id_cliente === id);
     return c ? `${c.nombre} ${c.apellido}` : "Desconocido";
   };
 
   const getVehiculoNombre = (id) => {
-    const v = vehiculos.find(x => x.id_vehiculo === id);
+    const v = safeVehiculos.find(x => x.id_vehiculo === id);
     return v ? `${v.marca} ${v.nombre} ${v.modelo} (${v.patente})` : "Desconocido";
   };
 
@@ -67,7 +73,7 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
   // --- Procesamiento de Datos ---
   const processedItems = useMemo(() => {
     // 1. Enriquecer datos (Nombres y Precios)
-    let data = items.map(item => {
+    let data = safeItems.map(item => {
       const precioDiario = getPrecioVehiculo(item.id_vehiculo);
       let dias = 0;
       if (item.fecha_hora_fin_real !== null){
@@ -118,7 +124,7 @@ export default function AlquilerList({ items = [], vehiculos = [], clientes = []
       });
     }
     return data;
-  }, [items, searchTerm, sortConfig, filters, clientes, vehiculos]);
+  }, [safeItems, searchTerm, sortConfig, filters, safeClientes, safeVehiculos]);
 
   // --- Botones de Acción (Workflow) ---
   const renderActions = (alquiler) => {

@@ -1,39 +1,55 @@
 import axios from "axios";
 
+// 1. Verificación de seguridad para la URL
+const apiUrl = import.meta.env.VITE_API_URL;
+console.log("Conectando a API en:", apiUrl); // <--- Mira esto en la consola del navegador (F12)
+
+if (!apiUrl) {
+    console.error("¡ERROR CRÍTICO! VITE_API_URL no está definida. Revisa tu archivo .env");
+}
+
 const API = axios.create({
-  baseURL: "http://127.0.0.1:8000",
+  baseURL: apiUrl,
   headers: { "Content-Type": "application/json" }
 });
 
-// INTERCEPTOR para manejar errores
+// 2. INTERCEPTOR CORREGIDO
 API.interceptors.response.use(
-  response => response, 
+  (response) => {
+    // ÉXITO: Devolvemos la respuesta tal cual
+    return response;
+  },
+  (error) => {
+    console.error("Error en la API:", error);
 
-  error => {
-    // Error del backend con JSON { error: "mensaje" }
+    // ERROR: Rechazamos la promesa para que el componente sepa que falló.
+    // Esto permite que el try/catch o el .catch() del componente capturen el error.
     if (error.response && error.response.data) {
-      return Promise.resolve({ data: null, error: error.response.data.error });
+        return Promise.reject(error.response.data); // Devuelve el error del backend
     }
-
-    // Error inesperado (servidor caído, red, etc.)
-    return Promise.resolve({ data: null, error: "Error de red o servidor." });
+    return Promise.reject({ error: "Error de red o servidor no disponible." });
   }
 );
+
+// --- Funciones Auxiliares ---
 
 export function localToIso(datetimeLocalStr){
   if(!datetimeLocalStr) return null;
   const s = datetimeLocalStr.replace("T"," ");
-  // si no tiene segundos, agregar :00
   return s.length === 16 ? s + ":00" : s;
 }
 
 export function descargarPDF(url) {
-  window.open(`http://127.0.0.1:8000${url}`, "_blank");
+    // Aseguramos que la URL no tenga doble slash //
+    const cleanBase = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+    const cleanPath = url.startsWith('/') ? url : `/${url}`;
+    window.open(`${cleanBase}${cleanPath}`, "_blank");
 }
 
+// --- Endpoints (Sin cambios, están bien) ---
 
 // Clientes
-export const getClientes = () => API.get("/clientes/");
+export const getClientes = () => API.get("/clientes/"); // Ojo con la barra final si tu backend no la espera
 export const getCliente = (id) => API.get(`/clientes/${id}`);
 export const createCliente = (payload) => API.post("/clientes/", payload);
 export const updateCliente = (id, payload) => API.put(`/clientes/${id}`, payload);
@@ -53,7 +69,7 @@ export const createAlquiler = (payload) => API.post("/alquileres/", payload);
 export const confirmarAlquiler = (id) => API.post(`/alquileres/${id}/confirmar`);
 export const iniciarAlquiler = (id) => API.post(`/alquileres/${id}/iniciar`);
 export const devolverAlquiler = (id) => API.post(`/alquileres/${id}/devolver`);
-export const deleteAlquiler = (id) => API.post(`/alquileres/${id}/delete`);
+export const deleteAlquiler = (id) => API.post(`/alquileres/${id}/delete`); // Nota: aquí usas POST, asegúrate que el backend lo espera así
 export const updateAlquiler = (id, payload) => API.put(`/alquileres/${id}`, payload);
 
 // Empleados
@@ -70,5 +86,3 @@ export const getMultas = () => API.get("/multas/");
 
 // Facturas
 export const getFacturaByAlquiler = (id_alquiler) => API.get(`/facturas/alquiler/${id_alquiler}`);
-
-
