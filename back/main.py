@@ -50,7 +50,8 @@ origins = [
     "http://127.0.0.1:5174",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "https://trabajo-final-qhuxljx68-ernestopetrichs-projects.vercel.app"
+    "https://trabajo-final-qhuxljx68-ernestopetrichs-projects.vercel.app",
+    "https://trabajo-final-dao-git-main-ernestopetrichs-projects.vercel.app"
 ]
 
 app.add_middleware(
@@ -479,4 +480,4 @@ if __name__ == "__main__":
     setup_database()
 
     port = int(os.getenv("PORT", 8000))
-    uvicorn.run("main:app", host="127.0.0.1", port=port, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
